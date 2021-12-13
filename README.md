@@ -1,2 +1,2 @@
 # phpweb
-Simple PHP Website Foundation
+Simple PHP Website Foundation based on PSR
