@@ -62,7 +62,7 @@ class DbModel extends Model
 
     public function get($id): bool
     {
-        $data = app()->db($this->getConnection())->select($this->getTable(), '*', [$this->primaryKey . "=" => $id], 1);
+        $data = app()->db($this->getConnection())->select($this->table, '*', [$this->primaryKey . "=" => $id], 1);
         
         if($data){
             foreach($data as $row){
@@ -86,7 +86,8 @@ class DbModel extends Model
 
     protected function generateFields(): void
     {
-        $stmt = app()->db($this->connection)->connection()->query("SELECT * FROM " . $this->getTable() . " LIMIT 0;");
+        $db = app()->db($this->connection);
+        $stmt = $db->connection()->query("SELECT * FROM " . $db->table($this->table) . " LIMIT 0;");
         $columnCount = $stmt->columnCount();
         for ($i = 0; $i < $columnCount; $i++) {
             $col = $stmt->getColumnMeta($i);
@@ -130,8 +131,7 @@ class DbModel extends Model
 
     public static function all(string $column = '*', int $limit = 0, string $orderby = '', string $result = self::RESULT_ARRAY): array
     {
-        $model = app()->dbModel(get_called_class());
-        $data = app()->db(self::connection())->select($model->getTable(), $column, '', $limit, $orderby);
+        $data = app()->db(self::connection())->select(self::table(), $column, '', $limit, $orderby);
 
         if(!is_array($data)){
             $data = [];
@@ -143,6 +143,7 @@ class DbModel extends Model
 
         $results = [];
         if($result === self::RESULT_OBJECT){
+            $model = app()->dbModel(get_called_class());
             foreach($data as $row){
                 $obj = clone $model;
                 $results[] = $obj->fill($row);
@@ -153,25 +154,22 @@ class DbModel extends Model
     }
 
     public static function getRow($id, string $column = '*'): array
-    {
-        $model = app()->dbModel(get_called_class());
+    {       
+        $data = app()->db(self::connection())->select(self::table(), $column, [self::primaryKey() . "=" => $id], 1);
         
-        $data = app()->db(self::connection())->select($model->getTable(), $column, [$model->getPrimaryKey() . "=" => $id], 1);
-        
+        $result = [];
         if($data){
             foreach($data as $row){
-                return $row;
+                $result = $row;
             }
         }
 
-        return [];
+        return $result;
     }
 
     public static function find($where = '', string $column = '*', int $limit = 0, string $orderby = '', string $result = self::RESULT_ARRAY): array
     {
-        $model = app()->dbModel(get_called_class());
-        
-        $data = app()->db(self::connection())->select($model->getTable(), $column, $where, $limit, $orderby);
+        $data = app()->db(self::connection())->select(self::table(), $column, $where, $limit, $orderby);
         
         if(!is_array($data)){
             return [];
@@ -183,6 +181,7 @@ class DbModel extends Model
 
         $results = [];
         if($result === self::RESULT_OBJECT){
+            $model = app()->dbModel(get_called_class());
             foreach($data as $row){
                 $obj = clone $model;
                 $results[] = $obj->fill($row);

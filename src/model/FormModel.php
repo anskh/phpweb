@@ -58,14 +58,32 @@ class FormModel extends Model
         }
     }
 
-    public function setRules(array $rules)
+    public function setRules(array $rules): void
     {
-        $this->rules = $rules; 
+        foreach($rules as $attribute => $rule){
+            $this->setRule($attribute, $rule);
+        }
     }
 
-    public function setLabels(array $labels)
+    public function setRule(string $attribute, $rule): void
     {
-        $this->labels = $labels; 
+        if(property_exists($this, $attribute)){
+            $this->rules[$attribute] = $rule; 
+        }
+    }
+
+    public function setLabels(array $labels): void
+    {
+        foreach($labels as $attribute => $label){
+            $this->setLabel($attribute, $label);
+        } 
+    }
+
+    public function setLabel(string $attribute, string $label): void
+    {
+        if(property_exists($this, $attribute)){
+            $this->labels[$attribute] = $label; 
+        }
     }
 
     public function getLabel(string $attribute): string
@@ -73,9 +91,16 @@ class FormModel extends Model
         return $this->labels[$attribute] ?? $attribute;
     }
 
-    public function setMessages(array $messages)
+    public function setMessages(array $messages): void
     {
-        $this->messages = $messages;
+        foreach($messages as $rule => $message){
+            $this->setMessage($rule, $message);
+        }
+    }
+
+    public function setMessage(string $rule, string $message): void
+    {
+        $this->messages[$rule] = $message;
     }
 
     public function skipValidation(bool $skip = true)
@@ -153,9 +178,9 @@ class FormModel extends Model
                             }
                         }
 
-                        $db = app()->db()->select($table, $column, $where, 1, '', PDO::FETCH_COLUMN);
+                        $row = app()->db()->select($table, $column, $where, 1, '', PDO::FETCH_COLUMN);
                         
-                        if(!empty($db)){
+                        if(!$row){
                             $this->addErrorForRule($attr, $ruleName, $val);
                         }
                         break;
