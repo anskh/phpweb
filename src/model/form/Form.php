@@ -6,6 +6,8 @@ namespace PhpWeb\Model\Form;
 
 use PhpWeb\Model\FormModel;
 
+use function PhpWeb\attributes_to_string;
+
 class Form
 {
     private FormModel $model;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PhpWeb\Model;
 
 use PDO;
-use PhpWeb\Db\Database;
+use PhpWeb\Config\Config;
 
 use function PhpWeb\app;
 use function PhpWeb\class_name;
@@ -24,7 +24,10 @@ class DbModel extends Model
 
     public function __construct(?string $connection = null)
     {
-        $this->connection = $connection;
+        if($connection){
+            $this->connection = $connection;
+        }
+
         if(!isset($this->table)){
             $this->table = strtolower(class_name($this));
         }
@@ -35,7 +38,7 @@ class DbModel extends Model
 
     public function getTable(): string
     {
-        return app()->db()->table($this->table);
+        return $this->table;
     }
 
     public function getPrimaryKey(): string
@@ -50,6 +53,10 @@ class DbModel extends Model
 
     public function getConnection(): ?string
     {
+        if(!isset($this->connection)){
+            $this->connection = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_DEFAULT_CONNECTION);
+        }
+
         return $this->connection;
     }
 
@@ -58,7 +65,9 @@ class DbModel extends Model
         $data = app()->db($this->getConnection())->select($this->getTable(), '*', [$this->primaryKey . "=" => $id], 1);
         
         if($data){
-            $this->fill($data);
+            foreach($data as $row){
+                $this->fill($row);
+            }
             return true;
         }
 
@@ -101,7 +110,7 @@ class DbModel extends Model
 
     public static function connection(): string
     {
-        return app()->config(Database::ATTR . '.' . Database::ATTR_DEFAULT_CONNECTION);
+        return app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_DEFAULT_CONNECTION);
     }
     
     public static function create(array $data): int
@@ -149,11 +158,13 @@ class DbModel extends Model
         
         $data = app()->db(self::connection())->select($model->getTable(), $column, [$model->getPrimaryKey() . "=" => $id], 1);
         
-        if(!is_array($data)){
-            $data = [];
+        if($data){
+            foreach($data as $row){
+                return $row;
+            }
         }
 
-        return $data;
+        return [];
     }
 
     public static function find($where = '', string $column = '*', int $limit = 0, string $orderby = '', string $result = self::RESULT_ARRAY): array
@@ -163,7 +174,7 @@ class DbModel extends Model
         $data = app()->db(self::connection())->select($model->getTable(), $column, $where, $limit, $orderby);
         
         if(!is_array($data)){
-            $data = [];
+            return [];
         }
 
         if($result === self::RESULT_ARRAY){

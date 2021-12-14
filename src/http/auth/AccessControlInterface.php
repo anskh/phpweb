@@ -6,11 +6,11 @@ namespace PhpWeb\Http\Auth;
 
 interface AccessControlInterface
 {
-    public function filter(array $options): bool;
+    public function filter(): bool;
 
-    public function isAuthenticationRequired(string $permission, array $options): bool;
+    public function isAuthenticationRequired(string $permission): bool;
 
-    public function authenticate(string $modelClass): UserIdentityInterface;
+    public function authenticate(): UserIdentityInterface;
 
-    public function authorize(array $roles): bool;
+    public function authorize(array $roles, string $permission): bool;
 }
