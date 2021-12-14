@@ -72,6 +72,12 @@ class Database
 
     public function insert(array $data, string $table): int
     {
+        $affectedRows = 0;
+
+        if(!$data){
+            return $affectedRows;
+        }
+
         $first = current($data);
         $multiInsert = is_array($first);
         $keys = $multiInsert ? array_keys($first) : array_keys($data);
@@ -79,15 +85,16 @@ class Database
         $sql = "INSERT INTO $table(" .  implode(',', $keys) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
         $stmt = $this->connection()->prepare($sql);
 
-        $affectedRows = 0;
         if ($multiInsert) {
             foreach ($data as $row) {
-                $stmt->execute(array_values($row));
-                $affectedRows += $stmt->rowCount();
+                if($stmt->execute(array_values($row))){
+                    $affectedRows += $stmt->rowCount();
+                }
             }
         } else {
-            $stmt->execute(array_values($data));
-            $affectedRows += $stmt->rowCount();
+            if($stmt->execute(array_values($data))){
+                $affectedRows += $stmt->rowCount();
+            }
         }
 
         return $affectedRows;
@@ -95,6 +102,12 @@ class Database
 
     public function update(array $data, string $table, $where): int
     {
+        $affectedRows = 0;
+        
+        if(!$data){
+            return $affectedRows;
+        }
+
         $keys = array_keys($data);
         $table = $this->table($table);
         $sql = "UPDATE $table SET " . implode(',', array_map(fn ($attr) => "$attr = ?", $keys));
@@ -115,9 +128,11 @@ class Database
 
         $params = is_array($where) ? array_merge(array_values($data), array_values($where)) : array_values($data);
 
-        $stmt->execute($params);
+        if($stmt->execute($params)){
+            return $stmt->rowCount();
+        }
 
-        return $stmt->rowCount();
+        return $affectedRows;
     }
 
     public function delete(string $table, $where): int
@@ -140,12 +155,16 @@ class Database
 
         $stmt = $this->connection()->prepare($sql . ";");
         if (is_array($where)) {
-            $stmt->execute(array_values($where));
+            if($stmt->execute(array_values($where))){
+                return $stmt->rowCount();
+            }
         } else {
-            $stmt->execute();
+            if($stmt->execute()){
+                return $stmt->rowCount();
+            }
         }
 
-        return $stmt->rowCount();
+        return 0;
     }
 
     public function select(string $table, string $column = '*', $where = '', int $limit = 0, string $orderby = '', int $fetch = PDO::FETCH_ASSOC)

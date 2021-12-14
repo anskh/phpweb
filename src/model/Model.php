@@ -28,7 +28,11 @@ abstract class Model
                         $this->{$field} = $value;
                         break;
                     case "array":
+                        $this->{$field} = (array)$value;
+                        break;
                     case "object":
+                        $this->{$field} = (object)$value;
+                        break;
                     default:
                 }
             }

@@ -15,7 +15,6 @@ use Psr\Http\Message\ServerRequestInterface;
 
 use function PhpWeb\app;
 use function PhpWeb\client_ip;
-use function PhpWeb\current_route;
 use function PhpWeb\user_agent;
 
 class AccessControl implements AccessControlInterface
