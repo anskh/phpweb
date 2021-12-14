@@ -5,36 +5,30 @@ declare(strict_types=1);
 namespace PhpWeb\Db;
 
 use PDO;
+use PhpWeb\Config\Config;
 
 use function PhpWeb\app;
 
 class Database
 {
-    public const ATTR = 'database';
-    public const ATTR_CONNECTION = 'connections';
-    public const ATTR_DEFAULT_CONNECTION = 'default_connection';
-    public const ATTR_PREFIX = 'prefix';
-
     protected static $instance = null;
     protected array $db = [];
     protected array $config = [];
     protected ?string $connection = null;
 
-    private function __construct()
+    private final function __construct()
     {
-        $this->connection = app()->config(self::ATTR . '.' . self::ATTR_DEFAULT_CONNECTION);
-        $this->config = app()->config(self::ATTR . '.' . self::ATTR_CONNECTION . '.' . $this->connection);
+        $this->connection = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_DEFAULT_CONNECTION);
+        $this->config = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_CONNECTION . '.' . $this->connection);
            
-        $dsn =  $this->config['dsn'];
-        $username = $this->config['username'];
-        $password = $this->config['password'];
+        $dsn =  $this->config[Config::ATTR_DB_CONNECTION_DSN];
+        $username = $this->config[Config::ATTR_DB_CONNECTION_USER];
+        $password = $this->config[Config::ATTR_DB_CONNECTION_PASSWD];
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
         ];
         $this->db[$this->connection] = new PDO($dsn, $username, $password, $options);
-
-        self::$instance = $this;
     }
 
     public static function connect(?string $connection = null): self
@@ -47,11 +41,11 @@ class Database
 
         if(!self::$instance->db[$connection]){
             self::$instance->connection = $connection;
-            self::$instance->config = app()->config(self::ATTR . '.' . self::ATTR_CONNECTION . '.' . $connection);
+            self::$instance->config = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_CONNECTION . '.' . $connection);
             
-            $dsn =  self::$instance->config['dsn'];
-            $username = self::$instance->config['username'];
-            $password = self::$instance->config['password'];
+            $dsn =  self::$instance->config[Config::ATTR_DB_CONNECTION_DSN];
+            $username = self::$instance->config[Config::ATTR_DB_CONNECTION_USER];
+            $password = self::$instance->config[Config::ATTR_DB_CONNECTION_PASSWD];
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
@@ -69,7 +63,7 @@ class Database
 
     public function table(string $name): string
     {
-        if($prefix = $this->config[self::ATTR_PREFIX]){
+        if($prefix = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_PREFIX)){
             return $prefix . $name;
         }
 
@@ -104,7 +98,7 @@ class Database
         $keys = array_keys($data);
         $table = $this->table($table);
         $sql = "UPDATE $table SET " . implode(',', array_map(fn ($attr) => "$attr = ?", $keys));
-        if (!empty($where)) {
+        if ($where) {
             if (is_string($where)) {
                 $sql .= " WHERE " . $where;
             } elseif (is_array($where)) {
@@ -130,7 +124,7 @@ class Database
     {
         $table = $this->table($table);
         $sql = "DELETE FROM $table";
-        if (!$where) {
+        if ($where) {
             if (is_string($where)) {
                 $sql .= " WHERE " . $where;
             } elseif (is_array($where)) {
@@ -158,7 +152,7 @@ class Database
     {
         $table = $this->table($table);
         $sql = "SELECT $column FROM $table";
-        if (!$where) {
+        if ($where) {
             if (is_string($where)) {
                 $sql .= " WHERE " . $where;
             } elseif (is_array($where)) {
@@ -174,7 +168,7 @@ class Database
         if ($limit > 0) {
             $sql .= " LIMIT $limit";
         }
-        if (!$orderby) {
+        if ($orderby) {
             $sql .= " ORDER BY " . $orderby;
         }
 

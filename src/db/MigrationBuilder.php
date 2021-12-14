@@ -6,22 +6,21 @@ namespace PhpWeb\Db;
 
 use Exception;
 use PDO;
+use PhpWeb\Config\Config;
 
 use function PhpWeb\app;
 
 class MigrationBuilder
 {
-    public const ATTR = 'migration';
-    public const ATTR_PATH = 'path';
-    public const ATTR_ACTION = 'action';
-
+    protected string $connection;
     protected string $path;
     protected string $action;
     
-    public function __construct(?string $path = null, ?string $action = null)
+    public function __construct(?string $connection = null, ?string $path = null, ?string $action = null)
     {
-        $this->path = $path ?? app()->config(self::ATTR . '.' . self::ATTR_PATH);
-        $this->action = $action ?? app()->config(self::ATTR . '.' . self::ATTR_ACTION);
+        $this->connection = $connection ?? app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_DEFAULT_CONNECTION);
+        $this->path = $path ?? app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_MIGRATION . '.' . Config::ATTR_DB_MIGRATION_PATH);
+        $this->action = $action ?? app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_MIGRATION . '.' . Config::ATTR_DB_MIGRATION_ACTION);
     }
 
     public function applyMigration(): void
@@ -41,7 +40,7 @@ class MigrationBuilder
 
                 require_once $this->path . "/{$migration}";
                 $className = pathinfo($migration, PATHINFO_FILENAME);
-                $instance = new $className();
+                $instance = new $className($this->connection);
 
                 $this->log("Applying migration {$this->action} {$migration}");
                 if($instance->{$this->action}()){
@@ -64,7 +63,7 @@ class MigrationBuilder
 
     protected function createMigrationsTable()
     {
-        app()->db()->connection()->exec("CREATE TABLE IF NOT EXISTS migrations (
+        app()->db($this->connection)->connection()->exec("CREATE TABLE IF NOT EXISTS migrations (
             id INT NOT NULL AUTO_INCREMENT ,
             migration VARCHAR(255) NOT NULL,
             action VARCHAR(100) NOT NULL,
@@ -73,19 +72,25 @@ class MigrationBuilder
         ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;");
     }
 
-    protected function getAppliedMigrations()
+    protected function getAppliedMigrations(): array
     {
-        $stmt = app()->db()->connection()->query("SELECT migration FROM migrations WHERE action='{$this->action}';");
-        $stmt->execute();
+        $stmt = app()->db($this->connection)->connection()->query("SELECT migration FROM migrations WHERE action='{$this->action}';");
+        
+        if($stmt->execute()){
+            $result = $stmt->fetch(PDO::FETCH_COLUMN);
+            if(is_array($result)){
+                return $result;
+            }
+        }
 
-        return $stmt->fetch(PDO::FETCH_COLUMN);
+        return [];
     }
 
     protected function saveMigrations(array $migrations)
     {
         $migrations = implode(",", array_map(fn ($m) => "('$m','$this->action')", $migrations));
         
-        app()->db()->connection()->exec("INSERT INTO migrations (migration,action) VALUES $migrations");
+        app()->db($this->connection)->connection()->exec("INSERT INTO migrations (migration,action) VALUES $migrations");
     }
 
     protected function log(string $message)

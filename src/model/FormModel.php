@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace PhpWeb\Model;
 
+use DateTime;
 use PhpWeb\Model\Form\Form;
 use Psr\Http\Message\ServerRequestInterface;
 use Exception;
 use PDO;
+
+use function PhpWeb\app;
 
 class FormModel extends Model
 {
@@ -150,7 +153,7 @@ class FormModel extends Model
                             }
                         }
 
-                        $db = db_select(db_table($table), $column, $where, 1, '', PDO::FETCH_COLUMN);
+                        $db = app()->db()->select($table, $column, $where, 1, '', PDO::FETCH_COLUMN);
                         
                         if(!empty($db)){
                             $this->addErrorForRule($attr, $ruleName, $val);
@@ -193,7 +196,8 @@ class FormModel extends Model
                         break;
                     case static::ATTR_RULE_DATE:
                         $param = $ruleParam[0];
-                        if(!validate_date($val, $param)){
+                        $d = DateTime::createFromFormat($param, $val);
+                        if($d === false){
                             $this->addErrorForRule($attr, $ruleName, $param);
                         }
                         break;

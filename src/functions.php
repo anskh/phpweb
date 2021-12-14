@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace PhpWeb;
 
 use InvalidArgumentException;
+use Laminas\Diactoros\Response;
+use PhpWeb\Config\Config;
 use PhpWeb\Http\Kernel;
+use Psr\Http\Message\ResponseInterface;
+use Slim\Views\PhpRenderer;
 
 /**
  * 
@@ -135,8 +139,8 @@ if (!function_exists('PhpWeb\current_route')) {
     {
         $path = app()->request()->getUri()->getPath();
 
-        $routes = app()->config('route', []);
-        $base_path = app()->config('application.base_path', '');
+        $routes = app()->config(Config::ATTR_ROUTE_CONFIG, []);
+        $base_path = app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEPATH , '');
 
         foreach ($routes as $permission => $route) {
 
@@ -171,8 +175,8 @@ if (!function_exists('PhpWeb\current_route')) {
 if (!function_exists('PhpWeb\route_to')) {
     function route_to(string $name, array $params = []): string
     {
-        $route = app()->config("route.$name", []);
-        $base_path = app()->config('application.base_path', '');
+        $route = app()->config(Config::ATTR_ROUTE_CONFIG . ".$name", []);
+        $base_path = app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEPATH , '');
 
         if (empty($route)) {
             throw new InvalidArgumentException("Route not found.");
@@ -195,5 +199,76 @@ if (!function_exists('PhpWeb\route_to')) {
         }
 
         return $base_path . $url;
+    }
+}
+
+/**
+ * 
+ */
+if (!function_exists("PhpWeb\view")) {
+    function view(string $view, ?ResponseInterface $response = null, string $layout = '', array $data = [], int $status = 200): ResponseInterface
+    {
+        $response = $response ?? new Response();
+        $config = app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_VIEW);
+        $view .= $config[Config::ATTR_VIEW_FILE_EXT];
+        if (!empty($layout)) {
+            $layout = 'layout/' . $layout . $config[Config::ATTR_VIEW_FILE_EXT];
+        }
+        $renderer = new PhpRenderer($config[Config::ATTR_VIEW_PATH], $data, $layout);
+        $renderer->render($response, $view);
+
+        return $response->withStatus($status);
+    }
+}
+
+/**
+ * 
+ */
+if (!function_exists("PhpWeb\base_url")) {
+    function base_url(string $url): string
+    {
+        return app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEURL) . '/' . $url;
+    }
+}
+
+/**
+ * 
+ */
+if (!function_exists('PhpWeb\attributes_to_string')) {
+    function attributes_to_string($attributes): string
+    {
+        if (empty($attributes)) {
+            return '';
+        }
+        if (is_object($attributes)) {
+            $attributes = (array) $attributes;
+        }
+        if (is_array($attributes)) {
+            $atts = '';
+            foreach ($attributes as $key => $val) {
+
+                if (is_object($val)) {
+                    $val = (array) $val;
+                }
+                if (is_array($val)) {
+                    $val = "{" . attributes_to_string($val) . "}";
+                }
+                if (is_numeric($key)) {
+                    $key = '';
+                } else {
+                    $key .= '=';
+                    if (is_string($val)) {
+                        $val = "\"{$val}\"";
+                    }
+                }
+                $atts = empty($atts) ? ' ' . $key . $val : $atts . ' ' . $key  . $val;
+            }
+            return $atts;
+        }
+        if (is_string($attributes)) {
+            return ' ' . $attributes;
+        }
+
+        return '';
     }
 }

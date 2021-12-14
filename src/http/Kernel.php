@@ -8,7 +8,10 @@ use PDO;
 use PhpWeb\Config\Config;
 use PhpWeb\Config\Environment;
 use PhpWeb\Db\Database;
+use PhpWeb\Db\MigrationBuilder;
+use PhpWeb\Http\Auth\UserIdentity;
 use PhpWeb\Http\Auth\UserIdentityInterface;
+use PhpWeb\Http\Session\Session;
 use PhpWeb\Http\Session\SessionInterface;
 use PhpWeb\Model\DbModel;
 use Psr\Http\Message\ResponseInterface;
@@ -19,7 +22,8 @@ class Kernel
 {
     public string $environment;
 
-    private static ?Kernel $instance = null;
+    private static Kernel $instance;
+    private string $connection;
     private Harmony $app;
     private Config $config;
 
@@ -27,7 +31,16 @@ class Kernel
      * 
      */
     private final function __construct()
-    {        
+    {       
+    }
+
+    public static function getInstance(): self
+    {
+        if(!isset(self::$instance)){
+            self::$instance = new self();
+        }
+
+        return self::$instance;
     }
 
     /**
@@ -38,6 +51,7 @@ class Kernel
         $environment = $environment ?? Environment::DEVELOPMENT;
         self::getInstance()->environment = $environment;
         self::getInstance()->config = new Config($path, $environment);
+        self::getInstance()->connection = self::getInstance()->config->get(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_DEFAULT_CONNECTION);
     }
 
     /**
@@ -53,24 +67,12 @@ class Kernel
     /**
      * 
      */
-    public static function getInstance(): self
-    {
-        if(!self::$instance){
-            self::$instance = new Kernel();
-        }
-
-        return self::$instance;
-    }
-
-    /**
-     * 
-     */
     public function config(?string $key = null, $defaultValue = null)
     {
         if($key){
-            return self::getInstance()->config->get($key, $defaultValue);
+            return $this->config->get($key, $defaultValue);
         }else{
-            return self::getInstance()->config;
+            return $this->config;
         }
     }
 
@@ -79,7 +81,7 @@ class Kernel
      */
     public function user(): UserIdentityInterface
     {
-        return self::getInstance()->app->request->getAttribute('');
+        return $this->app->getRequest()->getAttribute(UserIdentity::class);
     }
 
     /**
@@ -87,7 +89,7 @@ class Kernel
      */
     public function session(): SessionInterface
     {
-        return self::getInstance()->app->request->getAttribute('');
+        return $this->app->getRequest()->getAttribute(Session::class);
     }
 
     /**
@@ -95,7 +97,7 @@ class Kernel
      */
     public function request(): ServerRequestInterface
     {
-        return self::getInstance()->app->request;
+        return $this->app->getRequest();
     }
 
     /**
@@ -103,6 +105,7 @@ class Kernel
      */
     public function db(?string $connection = null): Database
     {
+        $connection = $connection ?? $this->connection;
         return Database::connect($connection);
     }
 
@@ -111,12 +114,21 @@ class Kernel
      */
     public function dbModel(string $class): ?DbModel
     {
-        $obj = new $class();
+        $obj = new $class($this->connection);
 
         if($obj instanceof DbModel){
             return $obj;
         }
 
         return null;
+    }
+
+    /**
+     * 
+     */
+    public function buildMigration(?string $connection = null, ?string $path = null, ?string $action = null): MigrationBuilder
+    {
+        $connection = $connection ?? $this->connection;
+        return new MigrationBuilder($connection, $path, $action);
     }
 }
