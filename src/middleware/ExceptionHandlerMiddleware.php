@@ -8,6 +8,7 @@ use Laminas\Diactoros\Response;
 use Monolog\Handler\FirePHPHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use PhpWeb\Config\Config;
 use PhpWeb\Config\Environment;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -23,20 +24,6 @@ use function PhpWeb\app;
 
 final class ExceptionHandlerMiddleware implements MiddlewareInterface
 {
-    public const ATTRIBUTE_LOG = 'log';
-    public const ATTRIBUTE_LOG_NAME = 'name';
-    public const ATTRIBUTE_LOG_FILE = 'file';
-    public const ATTRIBUTE_THROWABLE = 'throwable';
-    public const ATTRIBUTE_NOTFOUND = 'notfound';
-    
-
-    private array $config;
-
-    public function __construct(array $config = [])
-    {
-        $this->config = $config;
-    }
-
     /**
      * 
      */
@@ -56,7 +43,7 @@ final class ExceptionHandlerMiddleware implements MiddlewareInterface
      */
     private function handleNotFound(): ResponseInterface
     {
-        $notfound = $this->config[self::ATTRIBUTE_NOTFOUND] ?? null;
+        $notfound = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_NOTFOUND);
         if ($notfound && is_callable($notfound)) {
             return $notfound();
         } else {
@@ -72,15 +59,15 @@ final class ExceptionHandlerMiddleware implements MiddlewareInterface
      */
     private function handleThrowable(Throwable $exception): ResponseInterface
     {
-        $log = $this->config[self::ATTRIBUTE_LOG] ?? null;
+        $log = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_LOG);
         if($log){
-            $logger = new Logger($log[self::ATTRIBUTE_LOG_NAME]);
-            $logger->pushHandler(new StreamHandler($log[self::ATTRIBUTE_LOG_FILE]));
+            $logger = new Logger($log[Config::ATTR_EXCEPTION_LOG_NAME]);
+            $logger->pushHandler(new StreamHandler($log[Config::ATTR_EXCEPTION_LOG_FILE]));
             $logger->pushHandler(new FirePHPHandler());
             $logger->error($exception->getMessage());
         }
 
-        $throwable = $this->config[self::ATTRIBUTE_THROWABLE] ?? null;
+        $throwable = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_THROWABLE);
         if($throwable && is_callable($throwable)){
             return $throwable();
         }else{

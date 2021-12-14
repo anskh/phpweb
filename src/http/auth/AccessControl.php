@@ -44,18 +44,18 @@ class AccessControl implements AccessControlInterface
         $filters = $this->getFilterConfig();
         foreach ($filters as $filter => $setting) {
             switch ($filter) {
-                case self::ATTR_FILTER_IP:
+                case Config::ACCESSCONTROL_FILTER_IP:
                     if (!$this->filterIpAddress($setting)) {
                         return false;
                     } 
                     break;
-                case self::ATTR_FILTER_USER_AGENT:
+                case Config::ACCESSCONTROL_FILTER_USERAGENT:
                     if (!$this->filterUserAgent($setting)) {
                         return false;
                     }
                     break;
                 default:
-                    throw new InvalidArgumentException('Available filter are ' . self::ATTR_FILTER_IP . ' and ' . self::ATTR_FILTER_USER_AGENT);
+                    throw new InvalidArgumentException('Available filter are ' . Config::ACCESSCONTROL_FILTER_IP . ' and ' . Config::ACCESSCONTROL_FILTER_USERAGENT);
             }
         }
 
@@ -184,7 +184,7 @@ class AccessControl implements AccessControlInterface
 
             if($user){
                 if (password_verify(sha1($user->password . $user->token) . ':' . $userAgent, $session->get(Session::ATTR_SESSION_HASH))) {
-                    $roles = explode('|', $user->roles);
+                    $roles = explode(Config::ACCESSCONTROL_SEPARATOR, $user->roles);
                     return new UserIdentity($sid, $user->name, $roles);
                 }else{
                     $session->unset(Session::ATTR_SESSION_ID);
@@ -219,7 +219,7 @@ class AccessControl implements AccessControlInterface
 
     public function unauthorized(int $status = 401): ResponseInterface
     {
-        $unauthorized = app()->config('exception.unauthorized');
+        $unauthorized = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_UNAUTHORIZED);
         if (is_null($unauthorized) || !is_callable($unauthorized)) {
             $response = new Response();
             return $response->withStatus($status);
@@ -230,7 +230,7 @@ class AccessControl implements AccessControlInterface
 
     public function forbidden(int $status = 403): ResponseInterface
     {
-        $forbidden = app()->config('exception.forbidden');
+        $forbidden = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_FORBIDDEN);
         if (is_null($forbidden) || !is_callable($forbidden)) {
             $response = new Response();
             return $response->withStatus($status);

@@ -53,6 +53,9 @@ class Config implements ArrayAccess
     public const ATTR_EXCEPTION_FORBIDDEN = 'forbidden';
     public const ATTR_EXCEPTION_NOTFOUND = 'notfound';
     public const ATTR_EXCEPTION_THROWABLE = 'throwable';    
+    public const ATTR_EXCEPTION_LOG = 'log';
+    public const ATTR_EXCEPTION_LOG_NAME = 'name';
+    public const ATTR_EXCEPTION_LOG_FILE = 'file';
 
     public const HASHING_ALGORITHM = PASSWORD_BCRYPT;
     public const ACCESSCONTROL_SEPARATOR = '|';
