@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ba47589d3b2e2191a024995ce876464b",
+    "content-hash": "8a1d6b39ce17f4f09b9b24066f28395c",
     "packages": [
         {
             "name": "anskh/phpweb",
-            "version": "v1.0.0",
+            "version": "v1.0.0.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/anskh/phpweb.git",
-                "reference": "9f5d0d05f7626216098ef66ea2b502b3b4313183"
+                "reference": "8ecd8b83cf1b28fa9a4c384e9cd353455052719e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/anskh/phpweb/zipball/9f5d0d05f7626216098ef66ea2b502b3b4313183",
-                "reference": "9f5d0d05f7626216098ef66ea2b502b3b4313183",
+                "url": "https://api.github.com/repos/anskh/phpweb/zipball/8ecd8b83cf1b28fa9a4c384e9cd353455052719e",
+                "reference": "8ecd8b83cf1b28fa9a4c384e9cd353455052719e",
                 "shasum": ""
             },
             "require": {
@@ -33,6 +33,7 @@
                 "filp/whoops": "^2.14",
                 "phpunit/phpunit": "^9.5"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -57,7 +58,7 @@
                 "issues": "https://github.com/anskh/phpweb/issues",
                 "source": "https://github.com/anskh/phpweb/tree/v1.0.0"
             },
-            "time": "2021-12-14T09:54:14+00:00"
+            "time": "2021-12-14T06:59:53+00:00"
         },
         {
             "name": "laminas/laminas-diactoros",
@@ -898,7 +899,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "anskh/phpweb": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

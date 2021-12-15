@@ -8,7 +8,7 @@
         "laminas/laminas-httphandlerrunner": "^2.1",
         "woohoolabs/harmony": "^7.1",
         "slim/php-view": "^3.1",
-        "anskh/phpweb": "^1.0"
+        "anskh/phpweb": "v1.0.0.x-dev"
     },
     "autoload": {
         "psr-0": {},
