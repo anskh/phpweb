@@ -6,6 +6,12 @@ namespace PhpWeb\Model;
 
 class User extends DbModel
 {
+    public const ATTR_TABLE = 'user';
+    public const ATTR_NAME = 'name';
+    public const ATTR_PASSWORD = 'password';
+    public const ATTR_TOKEN = 'token';
+    public const ATTR_ROLES = 'roles';
+
     protected string $table = 'user';
     protected bool $autoIncrement = true;
     protected string $primaryKey = 'id';
@@ -21,6 +27,6 @@ class User extends DbModel
 
     public static function table(): string
     {
-        return 'user';
+        return self::ATTR_TABLE;
     }
 }

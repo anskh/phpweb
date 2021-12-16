@@ -1,0 +1,69 @@
+<?php
+
+declare(strict_types=1);
+
+use PhpWeb\Config\Config;
+use PhpWeb\Db\Database;
+use PhpWeb\Db\Migration;
+
+use function PhpWeb\app;
+
+class m0002_role extends Migration
+{
+    protected string $table = Config::ATTR_ACCESSCONTROL_ROLE;
+
+    public function up(): bool
+    {
+        $db = app()->db($this->connection);
+        $type = $db->getDbType();
+        $table = $db->table($this->table);
+        
+        if($type === Database::PGSQL){
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
+                $db->quoteAttribute('id') . ' serial,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+        }elseif($type === Database::MYSQL){
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
+                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
+        }elseif($type === Database::SQLITE){
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
+                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+        }elseif($type === Database::SQLSRV){
+            $sql = 'IF OBJECT_ID(\'' . $table .'\', \'U\') IS NULL CREATE TABLE ' . $table . '(' .
+                $db->quoteAttribute('id') . ' INT IDENTITY(1,1),' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+        }
+
+        try {
+            $db->connection()->exec($sql);
+        } catch (Exception $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function seed(): bool
+    {
+        $roles = app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_ROLE);
+        $data = [];
+        foreach($roles as $role)
+        {
+            $data[] = [Config::ATTR_ACCESSCONTROL_ROLE_NAME => $role];
+        }
+
+        try {
+            if(app()->db($this->connection)->insert($data, $this->table)>0)return true;
+        } catch (Exception $e) {
+            return false;
+        }
+
+        return false;
+    }
+}
