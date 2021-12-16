@@ -14,10 +14,11 @@ class DbModel extends Model
 {
     public const RESULT_ARRAY = 'array';
     public const RESULT_OBJECT = 'object';
+    public const ATTR_ID = 'id';
 
     protected string $table;
     protected bool $autoIncrement = true;
-    protected string $primaryKey = 'id';
+    protected string $primaryKey = self::ATTR_ID;
     protected array $fields = [];
     protected string $connection;
     protected bool $editMode = false;
@@ -106,7 +107,7 @@ class DbModel extends Model
 
     public static function primaryKey(): string
     {
-        return 'id';
+        return self::ATTR_ID;
     }
 
     public static function connection(): string

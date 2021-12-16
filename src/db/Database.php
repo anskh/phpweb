@@ -11,6 +11,11 @@ use function PhpWeb\app;
 
 class Database
 {
+    public const MYSQL = 'mysql';
+    public const SQLITE = 'sqlite';
+    public const PGSQL = 'pgsql';
+    public const SQLSRV = 'sqlsrv';
+
     protected static $instance = null;
     protected array $db = [];
     protected array $config = [];
@@ -20,7 +25,7 @@ class Database
     {
         $this->connection = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_DEFAULT_CONNECTION);
         $this->config = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_CONNECTION . '.' . $this->connection);
-           
+
         $dsn =  $this->config[Config::ATTR_DB_CONNECTION_DSN];
         $username = $this->config[Config::ATTR_DB_CONNECTION_USER];
         $password = $this->config[Config::ATTR_DB_CONNECTION_PASSWD];
@@ -33,16 +38,16 @@ class Database
 
     public static function connect(?string $connection = null): self
     {
-        if(!self::$instance){
+        if (!self::$instance) {
             self::$instance = new Database();
         }
 
         $connection = $connection ?? self::$instance->connection;
 
-        if(!self::$instance->db[$connection]){
+        if (!self::$instance->db[$connection]) {
             self::$instance->connection = $connection;
             self::$instance->config = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_CONNECTION . '.' . $connection);
-            
+
             $dsn =  self::$instance->config[Config::ATTR_DB_CONNECTION_DSN];
             $username = self::$instance->config[Config::ATTR_DB_CONNECTION_USER];
             $password = self::$instance->config[Config::ATTR_DB_CONNECTION_PASSWD];
@@ -63,36 +68,47 @@ class Database
 
     public function table(string $name): string
     {
-        if($prefix = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_PREFIX)){
-            return $prefix . $name;
+        if ($prefix = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_PREFIX)) {
+            $name = $this->quoteAttribute($prefix . $name);
+        }else{
+            $name = $this->quoteAttribute($name);
         }
 
-        return $name;
+        if($schema = $this->config[Config::ATTR_DB_CONNECTION_SCHEMA]){
+            $name = $this->quoteAttribute($schema) . '.' . $name;
+        }
+
+        return  $name;
     }
 
     public function insert(array $data, string $table): int
     {
         $affectedRows = 0;
 
-        if(!$data){
+        if (!$data) {
             return $affectedRows;
         }
 
         $first = current($data);
         $multiInsert = is_array($first);
-        $keys = $multiInsert ? array_keys($first) : array_keys($data);
         $table = $this->table($table);
-        $sql = "INSERT INTO $table(" .  implode(',', $keys) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
-        $stmt = $this->connection()->prepare($sql);
-
+        
         if ($multiInsert) {
             foreach ($data as $row) {
-                if($stmt->execute(array_values($row))){
+                $row = array_filter($row, 'strlen');
+                $keys = array_keys($row);
+                $sql = "INSERT INTO $table(" .  implode(',', array_map(fn ($attr) => $this->quoteAttribute($attr), $keys)) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
+                $stmt = $this->connection()->prepare($sql);
+                if ($stmt->execute(array_values($row))) {
                     $affectedRows += $stmt->rowCount();
                 }
             }
         } else {
-            if($stmt->execute(array_values($data))){
+            $data = array_filter($data, 'strlen');
+            $keys = array_keys($data);
+            $sql = "INSERT INTO $table(" .  implode(',', array_map(fn ($attr) => $this->quoteAttribute($attr), $keys)) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
+            $stmt = $this->connection()->prepare($sql);
+            if ($stmt->execute(array_values($data))) {
                 $affectedRows += $stmt->rowCount();
             }
         }
@@ -103,14 +119,36 @@ class Database
     public function update(array $data, string $table, $where): int
     {
         $affectedRows = 0;
-        
-        if(!$data){
+
+        if (!$data) {
             return $affectedRows;
         }
 
-        $keys = array_keys($data);
         $table = $this->table($table);
-        $sql = "UPDATE $table SET " . implode(',', array_map(fn ($attr) => "$attr = ?", $keys));
+
+        $nullString = '';
+        $keys = [];
+        foreach($data as $key => $val){
+            if(is_null($val)){
+                if(empty($nullString)){
+                    $nullString = $key . '=NULL,';
+                }else{
+                    $nullString .= ',' . $key . '=NULL';
+                }
+            }else{
+                $keys[] = $key;
+            }
+        }
+        
+        if($keys){
+            if($nullString){
+                $nullString .= ',';
+            }
+            $sql = "UPDATE $table SET $nullString" . implode(',', array_map(fn ($attr) => $this->quoteAttribute($attr) . "=?", $keys));
+        }else{
+            $sql = "UPDATE $table SET $nullString";
+        }     
+        
         if ($where) {
             if (is_string($where)) {
                 $sql .= " WHERE " . $where;
@@ -127,8 +165,8 @@ class Database
         $stmt = $this->connection()->prepare($sql . ";");
 
         $params = is_array($where) ? array_merge(array_values($data), array_values($where)) : array_values($data);
-
-        if($stmt->execute($params)){
+        $params = array_filter($params, 'strlen');
+        if ($stmt->execute($params)) {
             return $stmt->rowCount();
         }
 
@@ -155,11 +193,11 @@ class Database
 
         $stmt = $this->connection()->prepare($sql . ";");
         if (is_array($where)) {
-            if($stmt->execute(array_values($where))){
+            if ($stmt->execute(array_values($where))) {
                 return $stmt->rowCount();
             }
         } else {
-            if($stmt->execute()){
+            if ($stmt->execute()) {
                 return $stmt->rowCount();
             }
         }
@@ -199,5 +237,32 @@ class Database
         }
 
         return $stmt->fetchAll($fetch);
+    }
+
+    public function getDbType(): string
+    {
+        return $this->config[Config::ATTR_DB_CONNECTION_TYPE];
+    }
+
+    public function quoteAttribute(string $attribute): string
+    {
+        $type = $this->getDbType();
+
+        switch($type)
+        {
+            case self::MYSQL:
+                return '`' . $attribute . '`';
+                break;
+            case self::SQLITE:
+            case self::PGSQL:
+                return '"' . $attribute . '"';
+                break;
+            case self::SQLSRV:
+                return '[' . $attribute . ']';
+                break;
+            default:
+                return $attribute;
+        }
+
     }
 }

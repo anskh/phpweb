@@ -44,6 +44,8 @@ class Config implements ArrayAccess
     public const ATTR_DB_CONNECTION_DSN = 'dsn';
     public const ATTR_DB_CONNECTION_USER = 'user';
     public const ATTR_DB_CONNECTION_PASSWD = 'password';
+    public const ATTR_DB_CONNECTION_TYPE = 'type';
+    public const ATTR_DB_CONNECTION_SCHEMA = 'schema';
     public const ATTR_DB_PREFIX = 'prefix';
     public const ATTR_DB_MIGRATION = 'migration';
     public const ATTR_DB_MIGRATION_PATH = 'path';

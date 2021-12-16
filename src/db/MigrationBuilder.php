@@ -15,7 +15,7 @@ class MigrationBuilder
     protected string $connection;
     protected string $path;
     protected string $action;
-    
+
     public function __construct(?string $connection = null, ?string $path = null, ?string $action = null)
     {
         $this->connection = $connection ?? app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_DEFAULT_CONNECTION);
@@ -43,10 +43,10 @@ class MigrationBuilder
                 $instance = new $className($this->connection);
 
                 $this->log("Applying migration {$this->action} {$migration}");
-                if($instance->{$this->action}()){
+                if ($instance->{$this->action}()) {
                     $newMigrations[] = $migration;
                     $this->log("Applied migration {$this->action} {$migration}");
-                }else{
+                } else {
                     $this->log("No applyable migration {$this->action} {$migration}");
                 }
             }
@@ -63,22 +63,63 @@ class MigrationBuilder
 
     protected function createMigrationsTable()
     {
-        app()->db($this->connection)->connection()->exec("CREATE TABLE IF NOT EXISTS migrations (
-            id INT NOT NULL AUTO_INCREMENT ,
-            migration VARCHAR(255) NOT NULL,
-            action VARCHAR(100) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id)
-        ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;");
+        $db = app()->db($this->connection);
+        $type = $db->getDbType();
+        $table = $db->table('migrations');
+
+        switch ($type) {
+            case Database::MYSQL:
+                $db->connection()->exec("CREATE TABLE IF NOT EXISTS $table (" .
+                    $db->quoteAttribute('id') . " INT NOT NULL AUTO_INCREMENT ," .
+                    $db->quoteAttribute('migration') . " VARCHAR(255) NOT NULL," .
+                    $db->quoteAttribute('action') . " VARCHAR(100) NOT NULL," .
+                    $db->quoteAttribute('create_at') . " TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (" . $db->quoteAttribute('id') . "),
+                    UNIQUE(" . $db->quoteAttribute('migration') . ", " . $db->quoteAttribute('action') . ")
+                    ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;");
+                break;
+            case Database::SQLITE:
+                $db->connection()->exec("CREATE TABLE IF NOT EXISTS $table (" .
+                    $db->quoteAttribute('id') . " INT NOT NULL AUTO_INCREMENT ," .
+                    $db->quoteAttribute('migration') . " VARCHAR(255) NOT NULL," .
+                    $db->quoteAttribute('action') . " VARCHAR(100) NOT NULL," .
+                    $db->quoteAttribute('create_at') . " TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (" . $db->quoteAttribute('id') . "),
+                    UNIQUE(" . $db->quoteAttribute('migration') . ", " . $db->quoteAttribute('action') . "));");
+                break;
+            case Database::SQLSRV:
+                $db->connection()->exec("IF OBJECT_ID('$table', 'U') IS NULL CREATE TABLE $table (" .
+                    $db->quoteAttribute('id') . " INT IDENTITY(1,1)," .
+                    $db->quoteAttribute('migration') . " VARCHAR(255) NOT NULL," .
+                    $db->quoteAttribute('action') . " VARCHAR(100) NOT NULL," .
+                    $db->quoteAttribute('create_at') . " DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (" . $db->quoteAttribute('id') . "),
+                    UNIQUE(" . $db->quoteAttribute('migration') . ", " . $db->quoteAttribute('action') . ")
+                );");
+                break;
+            case Database::PGSQL:
+                $db->connection()->exec("CREATE TABLE IF NOT EXISTS $table (" .
+                    $db->quoteAttribute('id') . " serial, ".
+                    $db->quoteAttribute('migration') . " VARCHAR(255) NOT NULL,".
+                    $db->quoteAttribute('action') . " VARCHAR(100) NOT NULL,".
+                    $db->quoteAttribute('create_at') . " TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (". $db->quoteAttribute('id') . "),
+                    UNIQUE(" . $db->quoteAttribute('migration') . ", " . $db->quoteAttribute('action') . "));");
+                break;
+            default:
+        }
     }
 
     protected function getAppliedMigrations(): array
     {
-        $stmt = app()->db($this->connection)->connection()->query("SELECT migration FROM migrations WHERE action='{$this->action}';");
+        $db = app()->db($this->connection);
+        $table = $db->table('migrations');
         
-        if($stmt->execute()){
-            $result = $stmt->fetch(PDO::FETCH_COLUMN);
-            if(is_array($result)){
+        $stmt = $db->connection()->prepare("SELECT ". $db->quoteAttribute('migration') . " FROM $table WHERE " . $db->quoteAttribute('action') . "=?;");
+
+        if ($stmt->execute([$this->action])) {
+            $result = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            if (is_array($result)) {
                 return $result;
             }
         }
@@ -89,8 +130,9 @@ class MigrationBuilder
     protected function saveMigrations(array $migrations)
     {
         $migrations = implode(",", array_map(fn ($m) => "('$m','$this->action')", $migrations));
-        
-        app()->db($this->connection)->connection()->exec("INSERT INTO migrations (migration,action) VALUES $migrations");
+        $db = app()->db($this->connection);
+        $table = $db->table('migrations');
+        $db->connection()->exec("INSERT INTO $table(" . $db->quoteAttribute('migration') . "," . $db->quoteAttribute('action') . ") VALUES $migrations");
     }
 
     protected function log(string $message)
