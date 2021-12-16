@@ -25,32 +25,32 @@ class m0005_user extends Migration
                 $db->quoteAttribute(User::ATTR_ID) . ' serial,' .
                 $db->quoteAttribute(User::ATTR_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,' .
                 $db->quoteAttribute(User::ATTR_PASSWORD) . ' VARCHAR(255) NOT NULL,' .
-                $db->quoteAttribute(User::ATTR_TOKEN) . ' VARCHAR(255) NOT NULL,' .
-                $db->quoteAttribute(User::ATTR_ROLES) . ' VARCHAR(255) NOT NULL,
+                $db->quoteAttribute(User::ATTR_TOKEN) . ' VARCHAR(255) NOT NULL DEFAULT \'\',' .
+                $db->quoteAttribute(User::ATTR_ROLES) . ' VARCHAR(255) NOT NULL DEFAULT \'\',
                 PRIMARY KEY (' . $db->quoteAttribute(User::ATTR_ID) . '));';
         } elseif ($type === Database::MYSQL) {
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
                 $db->quoteAttribute(User::ATTR_ID) . ' INT(11) NOT NULL AUTO_INCREMENT,' .
                 $db->quoteAttribute(User::ATTR_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,' .
                 $db->quoteAttribute(User::ATTR_PASSWORD) . ' VARCHAR(255) NOT NULL,' .
-                $db->quoteAttribute(User::ATTR_TOKEN) . ' VARCHAR(255) NOT NULL,' .
-                $db->quoteAttribute(User::ATTR_ROLES) . ' VARCHAR(255) NOT NULL,
+                $db->quoteAttribute(User::ATTR_TOKEN) . ' VARCHAR(255) NOT NULL DEFAULT \'\',' .
+                $db->quoteAttribute(User::ATTR_ROLES) . ' VARCHAR(255) NOT NULL DEFAULT \'\',
                 PRIMARY KEY (' . $db->quoteAttribute(User::ATTR_ID) . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
         } elseif ($type === Database::SQLITE) {
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
                 $db->quoteAttribute(User::ATTR_ID) . ' INT(11) NOT NULL AUTO_INCREMENT,' .
                 $db->quoteAttribute(User::ATTR_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,' .
                 $db->quoteAttribute(User::ATTR_PASSWORD) . ' VARCHAR(255) NOT NULL,' .
-                $db->quoteAttribute(User::ATTR_TOKEN) . ' VARCHAR(255) NOT NULL,' .
-                $db->quoteAttribute(User::ATTR_ROLES) . ' VARCHAR(255) NOT NULL,
+                $db->quoteAttribute(User::ATTR_TOKEN) . ' VARCHAR(255) NOT NULL DEFAULT \'\',' .
+                $db->quoteAttribute(User::ATTR_ROLES) . ' VARCHAR(255) NOT NULL DEFAULT \'\',
                 PRIMARY KEY (' . $db->quoteAttribute(User::ATTR_ID) . '));';
         } elseif ($type === Database::SQLSRV) {
             $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '(' .
                 $db->quoteAttribute(User::ATTR_ID) . ' INT IDENTITY,' .
                 $db->quoteAttribute(User::ATTR_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,' .
                 $db->quoteAttribute(User::ATTR_PASSWORD) . ' VARCHAR(255) NOT NULL,' .
-                $db->quoteAttribute(User::ATTR_TOKEN) . ' VARCHAR(255) NOT NULL,' .
-                $db->quoteAttribute(User::ATTR_ROLES) . ' VARCHAR(255) NOT NULL,
+                $db->quoteAttribute(User::ATTR_TOKEN) . ' VARCHAR(255) NOT NULL DEFAULT \'\',' .
+                $db->quoteAttribute(User::ATTR_ROLES) . ' VARCHAR(255) NOT NULL DEFAULT \'\',
                 PRIMARY KEY (' . $db->quoteAttribute(User::ATTR_ID) . '));';
         }
 
