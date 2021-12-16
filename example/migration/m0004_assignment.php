@@ -19,29 +19,29 @@ class m0004_assignment extends Migration
         $table = $db->table($this->table);
 
         if ($type === Database::PGSQL) {
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(
-                id serial, ' .
-                Config::ATTR_ACCESSCONTROL_ROLE . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                Config::ATTR_ACCESSCONTROL_PERMISSION . ' TEXT NOT NULL,
-                PRIMARY KEY (id));';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
+                $db->quoteAttribute('id') . ' serial, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NULL,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         } elseif ($type === Database::MYSQL) {
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(
-                id INT NOT NULL AUTO_INCREMENT, ' .
-                Config::ATTR_ACCESSCONTROL_ROLE . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                Config::ATTR_ACCESSCONTROL_PERMISSION . ' TEXT NOT NULL,
-                PRIMARY KEY (id))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
+                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NULL,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
         } elseif ($type === Database::SQLITE) {
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(
-                id INT NOT NULL AUTO_INCREMENT, ' .
-                Config::ATTR_ACCESSCONTROL_ROLE . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                Config::ATTR_ACCESSCONTROL_PERMISSION . ' TEXT NOT NULL,
-                PRIMARY KEY (id));';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
+                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NULL,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         } elseif ($type === Database::SQLSRV) {
-            $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '(
-                id INT IDENTITY(1,1), ' .
-                Config::ATTR_ACCESSCONTROL_ROLE . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                Config::ATTR_ACCESSCONTROL_PERMISSION . ' TEXT NOT NULL,
-                PRIMARY KEY (id));';
+            $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '(' .
+                $db->quoteAttribute('id') . ' INT IDENTITY(1,1), ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NULL,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         }
 
         try {
@@ -55,15 +55,15 @@ class m0004_assignment extends Migration
 
     public function seed(): bool
     {
-        $assignments = app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_ASSIGNMENT);
+        $assignments = app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_ASSIGNMENT, []);
         $data = [];
         foreach ($assignments as $role => $permissions) {
             $data[] = [
                 Config::ATTR_ACCESSCONTROL_ROLE => $role,
-                Config::ATTR_ACCESSCONTROL_PERMISSION => $this->permissionString($permissions),
+                Config::ATTR_ACCESSCONTROL_PERMISSION => empty($permissions) ? null : implode(Config::ACCESSCONTROL_SEPARATOR, $permissions),
             ];
         }
-
+        print_r($data);
         try {
             if (app()->db($this->connection)->insert($data, $this->table) > 0) return true;
         } catch (Exception $e) {
@@ -71,19 +71,5 @@ class m0004_assignment extends Migration
         }
 
         return false;
-    }
-
-    private function permissionString(array $permissions): string
-    {
-        $string = '';
-        foreach ($permissions as $permission) {
-            if ($string) {
-                $string .= Config::ACCESSCONTROL_SEPARATOR . $permission;
-            } else {
-                $string .= $permission;
-            }
-        }
-
-        return $string;
     }
 }

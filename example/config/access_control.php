@@ -11,12 +11,14 @@ return [
     ],
     // list of available role
     Config::ATTR_ACCESSCONTROL_ROLE => [
-        
+        'admin',
+        'user'
     ],
     // mapping role with permission
     // role => [permission1, permission2]
     Config::ATTR_ACCESSCONTROL_ASSIGNMENT => [
-
+        'admin'=>[],
+        'user'=>[]
     ],
     // list of filter by specific attribute
     // deny if in list

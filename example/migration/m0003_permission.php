@@ -19,25 +19,25 @@ class m0003_permission extends Migration
         $table = $db->table($this->table);
         
         if($type === Database::PGSQL){
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(
-                id serial,' .
-                Config::ATTR_ACCESSCONTROL_PERMISSION_NAME . ' VARCHAR(255) NOT NULL UNIQUE,
-                PRIMARY KEY (id));';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '( ' .
+                $db->quoteAttribute('id') . ' serial,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         }elseif($type === Database::MYSQL){
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(
-                id INT NOT NULL AUTO_INCREMENT,' .
-                Config::ATTR_ACCESSCONTROL_PERMISSION_NAME . ' VARCHAR(255) NOT NULL UNIQUE,
-                PRIMARY KEY (id))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '('.
+                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
         }elseif($type === Database::SQLITE){
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(
-                id INT NOT NULL AUTO_INCREMENT,' .
-                Config::ATTR_ACCESSCONTROL_PERMISSION_NAME . ' VARCHAR(255) NOT NULL UNIQUE,
-                PRIMARY KEY (id));';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '('.
+                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         }elseif($type === Database::SQLSRV){
-            $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '(
-                id INT IDENTITY(1,1),' .
-                Config::ATTR_ACCESSCONTROL_PERMISSION_NAME . ' VARCHAR(255) NOT NULL UNIQUE,
-                PRIMARY KEY (id));';
+            $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '('.
+                $db->quoteAttribute('id') . ' INT IDENTITY(1,1),' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         }
 
         try
@@ -52,7 +52,7 @@ class m0003_permission extends Migration
 
     public function seed(): bool
     {
-        $permissions = app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_PERMISSION);
+        $permissions = app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_PERMISSION, []);
         $data = [];
         foreach($permissions as $permission)
         {

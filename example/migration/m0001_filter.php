@@ -19,29 +19,29 @@ class m0001_filter extends Migration
         $table = $db->table($this->table);
 
         if ($type === Database::PGSQL) {
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(
-                id serial,' .
-                Config::ATTR_ACCESSCONTROL_FILTER_TYPE . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                Config::ATTR_ACCESSCONTROL_FILTER_LIST . ' TEXT NOT NULL DEFAULT \'\',
-                PRIMARY KEY (id));';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
+                $db->quoteAttribute('id') . ' serial,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_LIST) . ' TEXT NOT NULL DEFAULT \'\',
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         } elseif ($type === Database::MYSQL) {
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(
-                id INT NOT NULL AUTO_INCEMENT,' .
-                Config::ATTR_ACCESSCONTROL_FILTER_TYPE . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                Config::ATTR_ACCESSCONTROL_FILTER_LIST . ' TEXT NOT NULL DEFAULT \'\',
-                PRIMARY KEY (id))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
+                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCEMENT,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_LIST) . ' TEXT NOT NULL DEFAULT \'\',
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
         } elseif ($type === Database::SQLITE) {
-            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(
-                id INT NOT NULL AUTO_INCEMENT,' .
-                Config::ATTR_ACCESSCONTROL_FILTER_TYPE . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                Config::ATTR_ACCESSCONTROL_FILTER_LIST . ' TEXT NOT NULL DEFAULT \'\',
-                PRIMARY KEY (id));';
+            $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
+                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCEMENT,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_LIST) . ' TEXT NOT NULL DEFAULT \'\',
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         } elseif ($type === Database::SQLSRV) {
-            $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '(
-                id INT IDENTITY,' .
-                Config::ATTR_ACCESSCONTROL_FILTER_TYPE . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                Config::ATTR_ACCESSCONTROL_FILTER_LIST . ' TEXT NOT NULL DEFAULT \'\',
-                PRIMARY KEY (id));';
+            $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '(' .
+                $db->quoteAttribute('id') . ' INT IDENTITY,' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_LIST) . ' TEXT NOT NULL DEFAULT \'\',
+                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         }
 
         try {
