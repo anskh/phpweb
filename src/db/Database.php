@@ -74,7 +74,7 @@ class Database
             $name = $this->quoteAttribute($name);
         }
 
-        if($schema = $this->config[Config::ATTR_DB_CONNECTION_SCHEMA]){
+        if($schema = $this->config[Config::ATTR_DB_CONNECTION_SCHEMA] ?? ''){
             $name = $this->quoteAttribute($schema) . '.' . $name;
         }
 
