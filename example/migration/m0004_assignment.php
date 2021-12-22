@@ -22,26 +22,26 @@ class m0004_assignment extends Migration
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
                 $db->quoteAttribute('id') . ' serial, ' .
                 $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NOT NULL DEFAULT \'\',
-                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NULL,'.
+                'PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         } elseif ($type === Database::MYSQL) {
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
                 $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT, ' .
                 $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NOT NULL DEFAULT \'\',
-                PRIMARY KEY (' . $db->quoteAttribute('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NULL,'.
+                'PRIMARY KEY (' . $db->quoteAttribute('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
         } elseif ($type === Database::SQLITE) {
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
                 $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT, ' .
                 $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NOT NULL DEFAULT \'\',
-                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NULL,'.
+                'PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         } elseif ($type === Database::SQLSRV) {
             $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '(' .
                 $db->quoteAttribute('id') . ' INT IDENTITY(1,1), ' .
                 $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_ROLE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NOT NULL DEFAULT \'\',
-                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION) . ' TEXT NULL,'.
+                'PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
         }
 
         try {
