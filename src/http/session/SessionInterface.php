@@ -44,6 +44,26 @@ interface SessionInterface
     /**
      * 
      */
+    public function flashError(?string $name = null, ?string $message = null);
+    
+    /**
+     * 
+     */
+    public function flashSuccess(?string $name = null, ?string $message = null);
+
+    /**
+     * 
+     */
+    public function flashWarning(?string $name = null, ?string $message = null);
+
+    /**
+     * 
+     */
+    public function flashQuestion(?string $name = null, ?string $message = null);
+
+    /**
+     * 
+     */
     public function hasFlash(?string $name = null): bool;
 
     /**

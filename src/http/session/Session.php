@@ -80,7 +80,29 @@ class Session implements SessionInterface
             return $flash;
         }else{
             $this->data[self::FLASH][$name] = new FlashMessage($message, $type);
+
+            return true;
         }
+    }
+
+    public function flashError(?string $name = null, ?string $message = null)
+    {
+        return $this->flash($name, $message, FlashMessage::ERROR);
+    }
+    
+    public function flashSuccess(?string $name = null, ?string $message = null)
+    {
+        return $this->flash($name, $message, FlashMessage::SUCCESS);
+    }
+
+    public function flashWarning(?string $name = null, ?string $message = null)
+    {
+        return $this->flash($name, $message, FlashMessage::WARNING);
+    }
+
+    public function flashQuestion(?string $name = null, ?string $message = null)
+    {
+        return $this->flash($name, $message, FlashMessage::QUESTION);
     }
 
     public function hasFlash(?string $name = null): bool
