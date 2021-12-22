@@ -80,4 +80,14 @@ interface SessionInterface
      * 
      */
     public function validateCsrfToken(string $token, string $name): bool;
+
+    /**
+     * 
+     */
+    public function generateUserSessionHash(string $password, string $token, string $useragent): string;
+
+    /**
+     * 
+     */
+    public function validateUserSessionHash(string $password, string $token, string $useragent): bool;
 } 
