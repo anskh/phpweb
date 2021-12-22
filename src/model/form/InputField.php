@@ -6,6 +6,8 @@ namespace PhpWeb\Model\Form;
 
 use PhpWeb\Model\FormModel;
 
+use function PhpWeb\attributes_to_string;
+
 class InputField
 {
     public const TYPE_TEXT = 'text';
@@ -20,32 +22,29 @@ class InputField
     public string $type;
     public FormModel $model;
     public string $attribute;
-    public string $cssClass;
+    public array $options;
 
-    public function __construct(FormModel $model, string $attribute, string $class = '')
+    public function __construct(FormModel $model, string $attribute, array $options = [])
     {
         $this->model = $model;
         $this->type = self::TYPE_TEXT;
         $this->attribute = $attribute;
-        $this->cssClass = empty($class) ? '' : ' class="' . $class . '"';
+        $this->options = $options;
     }
 
     public function __toString(): string
     {
+        if($this->model->hasError($this->attribute)){
+            $this->options['class'] = isset($this->options['class']) ? $this->options['class'] .' is-invalid' : 'is-invalid';
+        }
+
         return sprintf(
-            '
-            <div%s>
-                <label>%s</label><br>
-                <input type="%s" name="%s" value="%s" class="form-control%s">
-                <div class="invalid-feedback">%s</div>
-            </div>
-        ',
-            $this->cssClass,
-            $this->model->getLabel($this->attribute),
+            '<input type="%s" name="%s" value="%s" %s>
+            <div class="invalid-feedback">%s</div>',
             $this->type,
             $this->attribute,
             $this->model->{$this->attribute} ?? '',
-            $this->model->hasError($this->attribute) ? ' is-invalid' : '',
+            attributes_to_string($this->options),
             $this->model->firstError($this->attribute)
         ) . PHP_EOL;
     }
