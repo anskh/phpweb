@@ -174,17 +174,14 @@ class AccessControl implements AccessControlInterface
             if(!$modelClass){
                 $modelClass = User::class;
             }
-
-            $user = app()->dbModel($modelClass);
-
             $sid = $session->get(Session::ATTR_SESSION_ID);
-
-            $user->get($sid);
+            $user = $modelClass::getRow($sid);
 
             if($user){
-                if (password_verify(sha1($user->password . $user->token) . ':' . $userAgent, $session->get(Session::ATTR_SESSION_HASH))) {
-                    $roles = explode(Config::ACCESSCONTROL_SEPARATOR, $user->roles);
-                    return new UserIdentity($sid, $user->name, $roles);
+                if($session->validateUserSessionHash($user[User::ATTR_PASSWORD], $user[User::ATTR_TOKEN], $userAgent))
+                {
+                    $roles = explode(Config::ACCESSCONTROL_SEPARATOR, $user[User::ATTR_ROLES]);
+                    return new UserIdentity($sid, $user[User::ATTR_NAME], $roles);
                 }else{
                     $session->unset(Session::ATTR_SESSION_ID);
                     $session->unset(Session::ATTR_SESSION_HASH);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpWeb\Http\Session;
 
+use PhpWeb\Config\Config;
+
 class Session implements SessionInterface
 {
     public const ATTR_SESSION_ID = 'sessid';
@@ -141,5 +143,20 @@ class Session implements SessionInterface
         unset($this->data[self::CSRF][$name]);
 
         return $token === $csrf;
+    }
+
+    public function generateUserSessionHash(string $password, string $token, string $useragent): string
+    {
+        $hash = password_hash(sha1($password . $token) . ':' . $useragent, Config::HASHING_ALGORITHM);
+        $this->set(self::ATTR_SESSION_HASH, $hash);
+
+        return $hash;
+    }
+
+    public function validateUserSessionHash(string $password, string $token, string $useragent): bool
+    {
+        $hash = sha1($password . $token) . ':' . $useragent;
+
+        return password_verify($hash, $this->get(self::ATTR_SESSION_HASH));
     }
 }
