@@ -6,8 +6,6 @@ namespace Anskh\PhpWeb\Model\Form;
 
 use Anskh\PhpWeb\Model\FormModel;
 
-use function Anskh\PhpWeb\attributes_to_string;
-
 class InputField
 {
     public const TYPE_TEXT = 'text';
@@ -44,7 +42,7 @@ class InputField
             $this->type,
             $this->attribute,
             $this->model->{$this->attribute} ?? '',
-            attributes_to_string($this->options),
+            my_attributes_to_string($this->options),
             $this->model->firstError($this->attribute)
         ) . PHP_EOL;
     }

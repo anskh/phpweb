@@ -1,0 +1,2 @@
+[2022-01-06T10:40:56.865774+00:00] app.ERROR: Call to undefined function Anskh\PhpWeb\app() [] []
+[2022-01-06T10:43:53.926977+00:00] app.ERROR: Call to undefined function view() [] []

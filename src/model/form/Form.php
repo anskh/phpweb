@@ -6,8 +6,6 @@ namespace Anskh\PhpWeb\Model\Form;
 
 use Anskh\PhpWeb\Model\FormModel;
 
-use function Anskh\PhpWeb\attributes_to_string;
-
 class Form
 {
     private FormModel $model;
@@ -18,7 +16,7 @@ class Form
     }
     public function begin(string $action, string $method = 'POST', array $options = []): string
     {
-        return "<form action=\"$action\" method=\"$method\"" . attributes_to_string($options) . ">" . PHP_EOL;
+        return "<form action=\"$action\" method=\"$method\"" . my_attributes_to_string($options) . ">" . PHP_EOL;
     }
 
     public function end(): string

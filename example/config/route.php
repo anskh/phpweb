@@ -13,6 +13,6 @@ return [
     }],
     'hello' => ['GET', '/hello', function (ServerRequestInterface $request, ResponseInterface $response): ResponseInterface {
         
-        return view('hello', $response);
+        return my_view('hello', $response);
     }]
 ];

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use InvalidArgumentException;
 use Laminas\Diactoros\Response;
 use Anskh\PhpWeb\Config\Config;
 use Anskh\PhpWeb\Http\Kernel;
@@ -171,7 +170,7 @@ if (!function_exists('my_current_route')) {
  * 
  */
 if (!function_exists('my_route_to')) {
-    function route_to(string $name, array $params = []): string
+    function my_route_to(string $name, array $params = []): string
     {
         $route = my_app()->config(Config::ATTR_ROUTE_CONFIG . ".$name", []);
         $base_path = my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEPATH , '');
@@ -203,8 +202,8 @@ if (!function_exists('my_route_to')) {
 /**
  * 
  */
-if (!function_exists("view")) {
-    function view(string $view, ?ResponseInterface $response = null, string $layout = '', array $data = [], int $status = 200): ResponseInterface
+if (!function_exists("my_view")) {
+    function my_view(string $view, ?ResponseInterface $response = null, string $layout = '', array $data = [], int $status = 200): ResponseInterface
     {
         $response = $response ?? new Response();
         $config = my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_VIEW);
@@ -222,8 +221,8 @@ if (!function_exists("view")) {
 /**
  * 
  */
-if (!function_exists("base_url")) {
-    function base_url(string $url): string
+if (!function_exists("my_base_url")) {
+    function my_base_url(string $url): string
     {
         return my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEURL) . '/' . $url;
     }
@@ -232,8 +231,8 @@ if (!function_exists("base_url")) {
 /**
  * 
  */
-if (!function_exists('attributes_to_string')) {
-    function attributes_to_string($attributes): string
+if (!function_exists('my_attributes_to_string')) {
+    function my_attributes_to_string($attributes): string
     {
         if (empty($attributes)) {
             return '';
@@ -249,7 +248,7 @@ if (!function_exists('attributes_to_string')) {
                     $val = (array) $val;
                 }
                 if (is_array($val)) {
-                    $val = "{" . attributes_to_string($val) . "}";
+                    $val = "{" . my_attributes_to_string($val) . "}";
                 }
                 if (is_numeric($key)) {
                     $key = '';

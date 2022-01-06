@@ -20,8 +20,6 @@ use WoohooLabs\Harmony\Exception\RouteNotFound;
 use Whoops\Run;
 use Whoops\Handler\PrettyPageHandler;
 
-use function Anskh\PhpWeb\app;
-
 final class ExceptionHandlerMiddleware implements MiddlewareInterface
 {
     /**
@@ -43,7 +41,7 @@ final class ExceptionHandlerMiddleware implements MiddlewareInterface
      */
     private function handleNotFound(): ResponseInterface
     {
-        $notfound = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_NOTFOUND);
+        $notfound = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_NOTFOUND);
         if ($notfound && is_callable($notfound)) {
             return $notfound();
         } else {
@@ -59,7 +57,7 @@ final class ExceptionHandlerMiddleware implements MiddlewareInterface
      */
     private function handleThrowable(Throwable $exception): ResponseInterface
     {
-        $log = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_LOG);
+        $log = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_LOG);
         if($log){
             $logger = new Logger($log[Config::ATTR_EXCEPTION_LOG_NAME]);
             $logger->pushHandler(new StreamHandler($log[Config::ATTR_EXCEPTION_LOG_FILE]));
@@ -67,12 +65,12 @@ final class ExceptionHandlerMiddleware implements MiddlewareInterface
             $logger->error($exception->getMessage());
         }
 
-        $throwable = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_THROWABLE);
+        $throwable = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_THROWABLE);
         if($throwable && is_callable($throwable)){
             return $throwable();
         }else{
             $response = new Response();
-            if(app()->environment === Environment::DEVELOPMENT){
+            if(my_app()->environment === Environment::DEVELOPMENT){
                 $whoops = new Run();
                 $whoops->allowQuit(false);
                 $whoops->writeToOutput(false);

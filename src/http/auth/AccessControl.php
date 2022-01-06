@@ -13,10 +13,6 @@ use Anskh\PhpWeb\Model\User;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-use function Anskh\PhpWeb\app;
-use function Anskh\PhpWeb\client_ip;
-use function Anskh\PhpWeb\user_agent;
-
 class AccessControl implements AccessControlInterface
 {
     protected array $permissions;
@@ -65,10 +61,10 @@ class AccessControl implements AccessControlInterface
     {
         $driver = $this->config[Config::ATTR_ACCESSCONTROL_DRIVER];
         if($driver === Config::ACCESSCONTROL_DRIVER_FILE){
-            return app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_FILTER);
+            return my_app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_FILTER);
         }elseif($driver === Config::ACCESSCONTROL_DRIVER_DB){
             $connection = $this->config[Config::ACCESSCONTROL_DRIVER_DB];
-            $results = app()->db($connection)->select(Config::ATTR_ACCESSCONTROL_FILTER);
+            $results = my_app()->db($connection)->select(Config::ATTR_ACCESSCONTROL_FILTER);
             if($results){
                 $filters = [];
                 foreach($results as $result){
@@ -90,10 +86,10 @@ class AccessControl implements AccessControlInterface
     {
         $driver = $this->config[Config::ATTR_ACCESSCONTROL_DRIVER];
         if($driver === Config::ACCESSCONTROL_DRIVER_FILE){
-            return app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_PERMISSION);
+            return my_app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_PERMISSION);
         }elseif($driver === Config::ACCESSCONTROL_DRIVER_DB){
             $connection = $this->config[Config::ACCESSCONTROL_DRIVER_DB];
-            $results = app()->db($connection)->select(Config::ATTR_ACCESSCONTROL_PERMISSION, Config::ATTR_ACCESSCONTROL_PERMISSION_NAME,'',0,'',PDO::FETCH_COLUMN);
+            $results = my_app()->db($connection)->select(Config::ATTR_ACCESSCONTROL_PERMISSION, Config::ATTR_ACCESSCONTROL_PERMISSION_NAME,'',0,'',PDO::FETCH_COLUMN);
             return $results;
         }
         
@@ -104,10 +100,10 @@ class AccessControl implements AccessControlInterface
     {
         $driver = $this->config[Config::ATTR_ACCESSCONTROL_DRIVER];
         if($driver === Config::ACCESSCONTROL_DRIVER_FILE){
-            return app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_ASSIGNMENT);
+            return my_app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_ASSIGNMENT);
         }elseif($driver === Config::ACCESSCONTROL_DRIVER_DB){
             $connection = $this->config[Config::ACCESSCONTROL_DRIVER_DB];
-            $results = app()->db($connection)->select(Config::ATTR_ACCESSCONTROL_ASSIGNMENT);
+            $results = my_app()->db($connection)->select(Config::ATTR_ACCESSCONTROL_ASSIGNMENT);
             if($results){
                 $assignments = [];
                 foreach($results as $result){
@@ -127,7 +123,7 @@ class AccessControl implements AccessControlInterface
             return true;
         }
 
-        $ip = client_ip();
+        $ip = my_client_ip();
         if (empty($ip)) {
             return true;
         }
@@ -141,7 +137,7 @@ class AccessControl implements AccessControlInterface
             return true;
         }
 
-        $user_agent =  user_agent();
+        $user_agent =  my_user_agent();
         if (empty($user_agent)) {
             return true;
         }
@@ -166,10 +162,10 @@ class AccessControl implements AccessControlInterface
 
     public function authenticate(): UserIdentity
     {
-        $session = app()->session();
+        $session = my_app()->session();
 
         if ($session->has(Session::ATTR_SESSION_ID) && $session->has(Session::ATTR_SESSION_HASH)) {
-            $userAgent =  user_agent();
+            $userAgent =  my_user_agent();
             $modelClass = $this->config[Config::ATTR_ACCESSCONTROL_USERMODEL];
             if(!$modelClass){
                 $modelClass = User::class;
@@ -215,7 +211,7 @@ class AccessControl implements AccessControlInterface
 
     public function unauthorized(int $status = 401): ResponseInterface
     {
-        $unauthorized = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_UNAUTHORIZED);
+        $unauthorized = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_UNAUTHORIZED);
         if (is_null($unauthorized) || !is_callable($unauthorized)) {
             $response = new Response();
             return $response->withStatus($status);
@@ -226,7 +222,7 @@ class AccessControl implements AccessControlInterface
 
     public function forbidden(int $status = 403): ResponseInterface
     {
-        $forbidden = app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_FORBIDDEN);
+        $forbidden = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_FORBIDDEN);
         if (is_null($forbidden) || !is_callable($forbidden)) {
             $response = new Response();
             return $response->withStatus($status);
