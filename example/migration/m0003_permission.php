@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-use PhpWeb\Config\Config;
-use PhpWeb\Db\Database;
-use PhpWeb\Db\Migration;
+use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Db\Database;
+use Anskh\PhpWeb\Db\Migration;
 
-use function PhpWeb\app;
 
 class m0003_permission extends Migration
 {
@@ -14,7 +13,7 @@ class m0003_permission extends Migration
 
     public function up(): bool
     {
-        $db = app()->db($this->connection);
+        $db = my_app()->db($this->connection);
         $type = $db->getDbType();
         $table = $db->table($this->table);
         
@@ -52,7 +51,7 @@ class m0003_permission extends Migration
 
     public function seed(): bool
     {
-        $permissions = app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_PERMISSION, []);
+        $permissions = my_app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_PERMISSION, []);
         $data = [];
         foreach($permissions as $permission)
         {
@@ -60,7 +59,7 @@ class m0003_permission extends Migration
         }
 
         try {
-            if(app()->db($this->connection)->insert($data, $this->table) > 0) return true;
+            if(my_app()->db($this->connection)->insert($data, $this->table) > 0) return true;
         } catch (Exception $e) {
             return false;
         }

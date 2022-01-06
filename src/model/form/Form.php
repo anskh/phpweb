@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Model\Form;
+namespace Anskh\PhpWeb\Model\Form;
 
-use PhpWeb\Model\FormModel;
+use Anskh\PhpWeb\Model\FormModel;
 
-use function PhpWeb\attributes_to_string;
+use function Anskh\PhpWeb\attributes_to_string;
 
 class Form
 {

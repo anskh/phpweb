@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Http\Session;
+namespace Anskh\PhpWeb\Http\Session;
 
-use PhpWeb\Config\Config;
+use Anskh\PhpWeb\Config\Config;
 
 class Session implements SessionInterface
 {

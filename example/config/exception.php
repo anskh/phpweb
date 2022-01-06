@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Laminas\Diactoros\Response;
-use PhpWeb\Config\Config;
+use Anskh\PhpWeb\Config\Config;
 use Psr\Http\Message\ResponseInterface;
 
 return [

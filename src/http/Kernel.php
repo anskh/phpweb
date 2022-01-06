@@ -2,18 +2,17 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Http;
+namespace Anskh\PhpWeb\Http;
 
-use PDO;
-use PhpWeb\Config\Config;
-use PhpWeb\Config\Environment;
-use PhpWeb\Db\Database;
-use PhpWeb\Db\MigrationBuilder;
-use PhpWeb\Http\Auth\UserIdentity;
-use PhpWeb\Http\Auth\UserIdentityInterface;
-use PhpWeb\Http\Session\Session;
-use PhpWeb\Http\Session\SessionInterface;
-use PhpWeb\Model\DbModel;
+use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Config\Environment;
+use Anskh\PhpWeb\Db\Database;
+use Anskh\PhpWeb\Db\MigrationBuilder;
+use Anskh\PhpWeb\Http\Auth\UserIdentity;
+use Anskh\PhpWeb\Http\Auth\UserIdentityInterface;
+use Anskh\PhpWeb\Http\Session\Session;
+use Anskh\PhpWeb\Http\Session\SessionInterface;
+use Anskh\PhpWeb\Model\DbModel;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use WoohooLabs\Harmony\Harmony;
@@ -37,7 +36,7 @@ class Kernel
     public static function getInstance(): self
     {
         if(!isset(self::$instance)){
-            self::$instance = new self();
+            self::$instance = new static();
         }
 
         return self::$instance;

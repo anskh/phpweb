@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Db;
+namespace Anskh\PhpWeb\Db;
 
 use PDO;
-use PhpWeb\Config\Config;
+use Anskh\PhpWeb\Config\Config;
 
-use function PhpWeb\app;
+use function Anskh\PhpWeb\app;
 
 class Database
 {
@@ -89,28 +89,28 @@ class Database
             return $affectedRows;
         }
 
-        $first = current($data);
-        $multiInsert = is_array($first);
         $table = $this->table($table);
-        
-        if ($multiInsert) {
-            foreach ($data as $row) {
-                $row = array_filter($row, 'strlen');
-                $keys = array_keys($row);
-                $sql = "INSERT INTO $table(" .  implode(',', array_map(fn ($attr) => $this->quoteAttribute($attr), $keys)) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
-                $stmt = $this->connection()->prepare($sql);
-                if ($stmt->execute(array_values($row))) {
-                    $affectedRows += $stmt->rowCount();
-                }
-            }
-        } else {
-            $data = array_filter($data, 'strlen');
-            $keys = array_keys($data);
-            $sql = "INSERT INTO $table(" .  implode(',', array_map(fn ($attr) => $this->quoteAttribute($attr), $keys)) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
-            $stmt = $this->connection()->prepare($sql);
-            if ($stmt->execute(array_values($data))) {
-                $affectedRows += $stmt->rowCount();
-            }
+        $data = array_filter($data, 'strlen');
+        $keys = array_keys($data);
+        $sql = "INSERT INTO $table(" .  implode(',', array_map(fn ($attr) => $this->quoteAttribute($attr), $keys)) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
+        $stmt = $this->connection()->prepare($sql);
+        if ($stmt->execute(array_values($data))) {
+            $affectedRows += $stmt->rowCount();
+        }
+
+        return $affectedRows;
+    }
+
+    public function insertBatch(array $data, string $table): int
+    {
+        $affectedRows = 0;
+
+        if (!$data) {
+            return $affectedRows;
+        }
+
+        foreach ($data as $row) {
+            $affectedRows += $this->insert($row, $table);
         }
 
         return $affectedRows;
@@ -241,7 +241,7 @@ class Database
 
     public function getDbType(): string
     {
-        return $this->config[Config::ATTR_DB_CONNECTION_TYPE];
+        return $this->connection()->getAttribute(PDO::ATTR_DRIVER_NAME);
     }
 
     public function quoteAttribute(string $attribute): string

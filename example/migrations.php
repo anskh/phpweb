@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 if(!defined("ROOT")) define("ROOT", __DIR__);
 
-require_once ROOT . "/vendor/autoload.php";
+require_once dirname(__DIR__) . "/vendor/autoload.php";
 
 use PhpWeb\Http\Kernel;
 

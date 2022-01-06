@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-use PhpWeb\Config\Config;
-use PhpWeb\Db\Database;
-use PhpWeb\Db\Migration;
-use PhpWeb\Http\Session\Session;
-use PhpWeb\Model\User;
-
-use function PhpWeb\app;
+use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Db\Database;
+use Anskh\PhpWeb\Db\Migration;
+use Anskh\PhpWeb\Http\Session\Session;
+use Anskh\PhpWeb\Model\User;
 
 class m0005_user extends Migration
 {
@@ -16,7 +14,7 @@ class m0005_user extends Migration
 
     public function up(): bool
     {
-        $db = app()->db($this->connection);
+        $db = my_app()->db($this->connection);
         $type = $db->getDbType();
         $table = $db->table($this->table);
 
@@ -81,7 +79,7 @@ class m0005_user extends Migration
         ];
 
         try {
-            if (app()->db($this->connection)->insert($data, $this->table) > 0) return true;
+            if (my_app()->db($this->connection)->insert($data, $this->table) > 0) return true;
         } catch (Exception $e) {
             return false;
         }

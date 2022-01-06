@@ -12,13 +12,13 @@
         "monolog/monolog": "^2.3"
     },
     "require-dev": {
-        "filp/whoops": "^2.14",
-        "phpunit/phpunit": "^9.5"
+        "filp/whoops": "^2.14"
     },
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "PhpWeb\\": "src/"
+            "Anskh\\PhpWeb\\": "src/",
+            "Anskh\\Example\\": "example/"
         },
         "files": ["src/functions.php"]
     },
@@ -28,6 +28,7 @@
     }],
     "minimum-stability": "stable",
     "scripts": {
-        "post-update-cmd": ["composer dump-autoload"]
+        "post-update-cmd": ["composer dump-autoload"],
+        "db:migrate": ["php -f example/migrations.php"]
     }
 }

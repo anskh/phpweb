@@ -2,20 +2,18 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb;
-
 use InvalidArgumentException;
 use Laminas\Diactoros\Response;
-use PhpWeb\Config\Config;
-use PhpWeb\Http\Kernel;
+use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Http\Kernel;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Views\PhpRenderer;
 
 /**
  * 
  */
-if (!function_exists('PhpWeb\app')) {
-    function app(): Kernel
+if (!function_exists('my_app')) {
+    function my_app(): Kernel
     {
         return Kernel::getInstance();
     }
@@ -24,8 +22,8 @@ if (!function_exists('PhpWeb\app')) {
 /**
  * 
  */
-if (!function_exists('PhpWeb\client_ip')) {
-    function client_ip(): string
+if (!function_exists('my_client_ip')) {
+    function my_client_ip(): string
     {
         if ($ip = getenv('HTTP_CLIENT_IP')) :
         elseif ($ip = getenv('HTTP_X_FORWARDED_FOR')) :
@@ -37,37 +35,37 @@ if (!function_exists('PhpWeb\client_ip')) {
         endif;
 
         //If HTTP_X_FORWARDED_FOR == server ip
-        if ((($ip) && ($ip == getenv('SERVER_ADDR')) && (getenv('REMOTE_ADDR')) || (!filter_var($ip, FILTER_VALIDATE_IP)))) {
+        if (($ip && ($ip == getenv('SERVER_ADDR')) && getenv('REMOTE_ADDR') || !filter_var($ip, FILTER_VALIDATE_IP))) {
             $ip = getenv('REMOTE_ADDR');
         }
 
-        if ($ip) {
-            if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-                $ip = '';
-            }
-        } else {
-            $ip = '';
+        if(!$ip){
+            $ip = gethostbyname(gethostname());
         }
 
-        return $ip;
+        if ($ip && filter_var($ip, FILTER_VALIDATE_IP)!== false) {
+            return $ip;
+        }  
+
+        return 'unknown';
     }
 }
 
 /**
  * 
  */
-if (!function_exists('PhpWeb\user_agent')) {
-    function user_agent(): string
+if (!function_exists('my_user_agent')) {
+    function my_user_agent(): string
     {
-        return app()->request()->getServerParams()['HTTP_USER_AGENT'] ?? '';
+        return my_app()->request()->getServerParams()['HTTP_USER_AGENT'] ?? '';
     }
 }
 
 /**
  * 
  */
-if(!function_exists('PhpWeb\class_name')){
-    function class_name($class): string
+if(!function_exists('my_class_name')){
+    function my_class_name($class): string
     {
         if (is_object($class)) {
             $class = get_class($class);
@@ -86,8 +84,8 @@ if(!function_exists('PhpWeb\class_name')){
 /**
  * 
  */
-if (!function_exists('PhpWeb\str_search')) {
-    function str_search(string $search, string $string, int $startpos = 0): int
+if (!function_exists('my_str_search')) {
+    function my_str_search(string $search, string $string, int $startpos = 0): int
     {
         $position = strpos($string, $search, $startpos);
         if (is_numeric($position)) {
@@ -101,8 +99,8 @@ if (!function_exists('PhpWeb\str_search')) {
 /**
  * 
  */
-if (!function_exists('PhpWeb\str_starts_with')) {
-    function str_starts_with(string $string, string $startString): bool
+if (!function_exists('my_str_starts_with')) {
+    function my_str_starts_with(string $string, string $startString): bool
     {
         $len = strlen($startString);
 
@@ -114,8 +112,8 @@ if (!function_exists('PhpWeb\str_starts_with')) {
     }
 }
 
-if (!function_exists('PhpWeb\str_ends_with')) {
-    function str_ends_with(string $string, string $endString): bool
+if (!function_exists('my_str_ends_with')) {
+    function my_str_ends_with(string $string, string $endString): bool
     {
         $len = strlen($endString);
 
@@ -134,13 +132,13 @@ if (!function_exists('PhpWeb\str_ends_with')) {
 /**
  * 
  */
-if (!function_exists('PhpWeb\current_route')) {
-    function current_route(): string
+if (!function_exists('my_current_route')) {
+    function my_current_route(): string
     {
-        $path = app()->request()->getUri()->getPath();
+        $path = my_app()->request()->getUri()->getPath();
 
-        $routes = app()->config(Config::ATTR_ROUTE_CONFIG, []);
-        $base_path = app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEPATH , '');
+        $routes = my_app()->config(Config::ATTR_ROUTE_CONFIG, []);
+        $base_path = my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEPATH , '');
 
         foreach ($routes as $permission => $route) {
 
@@ -148,7 +146,7 @@ if (!function_exists('PhpWeb\current_route')) {
             $search = ["{", "["];
 
             foreach ($search as $s) {
-                $pos = str_search($s, $route_path, 1);
+                $pos = my_str_search($s, $route_path, 1);
                 if ($pos >= 0) {
                     $route_path = substr($route_path, 0, $pos);
                 }
@@ -172,11 +170,11 @@ if (!function_exists('PhpWeb\current_route')) {
 /**
  * 
  */
-if (!function_exists('PhpWeb\route_to')) {
+if (!function_exists('my_route_to')) {
     function route_to(string $name, array $params = []): string
     {
-        $route = app()->config(Config::ATTR_ROUTE_CONFIG . ".$name", []);
-        $base_path = app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEPATH , '');
+        $route = my_app()->config(Config::ATTR_ROUTE_CONFIG . ".$name", []);
+        $base_path = my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEPATH , '');
 
         if (empty($route)) {
             throw new InvalidArgumentException("Route not found.");
@@ -184,7 +182,7 @@ if (!function_exists('PhpWeb\route_to')) {
 
         $url = $route[1];
 
-        if (str_search("{", $url, 1) >= 0 && !$params) {
+        if (my_str_search("{", $url, 1) >= 0 && !$params) {
             throw new InvalidArgumentException("route $name can't be empty params");
         }
 
@@ -205,14 +203,14 @@ if (!function_exists('PhpWeb\route_to')) {
 /**
  * 
  */
-if (!function_exists("PhpWeb\view")) {
+if (!function_exists("view")) {
     function view(string $view, ?ResponseInterface $response = null, string $layout = '', array $data = [], int $status = 200): ResponseInterface
     {
         $response = $response ?? new Response();
-        $config = app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_VIEW);
+        $config = my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_VIEW);
         $view .= $config[Config::ATTR_VIEW_FILE_EXT];
         if (!empty($layout)) {
-            $layout = 'layout/' . $layout . $config[Config::ATTR_VIEW_FILE_EXT];
+            $layout = $layout . $config[Config::ATTR_VIEW_FILE_EXT];
         }
         $renderer = new PhpRenderer($config[Config::ATTR_VIEW_PATH], $data, $layout);
         $renderer->render($response, $view);
@@ -224,17 +222,17 @@ if (!function_exists("PhpWeb\view")) {
 /**
  * 
  */
-if (!function_exists("PhpWeb\base_url")) {
+if (!function_exists("base_url")) {
     function base_url(string $url): string
     {
-        return app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEURL) . '/' . $url;
+        return my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEURL) . '/' . $url;
     }
 }
 
 /**
  * 
  */
-if (!function_exists('PhpWeb\attributes_to_string')) {
+if (!function_exists('attributes_to_string')) {
     function attributes_to_string($attributes): string
     {
         if (empty($attributes)) {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Db;
+namespace Anskh\PhpWeb\Db;
 
-use function PhpWeb\app;
+use function Anskh\PhpWeb\app;
 
 abstract class Migration
 {

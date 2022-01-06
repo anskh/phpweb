@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Db;
+namespace Anskh\PhpWeb\Db;
 
 use Exception;
 use PDO;
-use PhpWeb\Config\Config;
+use Anskh\PhpWeb\Config\Config;
 
-use function PhpWeb\app;
+use function Anskh\PhpWeb\app;
 
 class MigrationBuilder
 {

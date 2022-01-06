@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Model;
+namespace Anskh\PhpWeb\Model;
 
 use PDO;
-use PhpWeb\Config\Config;
+use Anskh\PhpWeb\Config\Config;
 
-use function PhpWeb\app;
-use function PhpWeb\class_name;
+use function Anskh\PhpWeb\app;
+use function Anskh\PhpWeb\class_name;
 
 class DbModel extends Model
 {

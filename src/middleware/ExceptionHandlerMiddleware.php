@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Middleware;
+namespace Anskh\PhpWeb\Middleware;
 
 use Laminas\Diactoros\Response;
 use Monolog\Handler\FirePHPHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use PhpWeb\Config\Config;
-use PhpWeb\Config\Environment;
+use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Config\Environment;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -20,7 +20,7 @@ use WoohooLabs\Harmony\Exception\RouteNotFound;
 use Whoops\Run;
 use Whoops\Handler\PrettyPageHandler;
 
-use function PhpWeb\app;
+use function Anskh\PhpWeb\app;
 
 final class ExceptionHandlerMiddleware implements MiddlewareInterface
 {

@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Middleware;
+namespace Anskh\PhpWeb\Middleware;
 
-use PhpWeb\Config\Config;
-use PhpWeb\Http\Auth\AccessControl;
-use PhpWeb\Http\Auth\UserIdentity;
+use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Http\Auth\AccessControl;
+use Anskh\PhpWeb\Http\Auth\UserIdentity;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use function PhpWeb\app;
-use function PhpWeb\current_route;
+use function Anskh\PhpWeb\app;
+use function Anskh\PhpWeb\current_route;
 
 final class AccessControlMiddleware implements MiddlewareInterface
 {

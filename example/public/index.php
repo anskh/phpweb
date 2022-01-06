@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 if(!defined("ROOT")) define("ROOT", dirname(__DIR__));
 
-require_once ROOT . "/vendor/autoload.php";
+require_once dirname(dirname(__DIR__)) . "/vendor/autoload.php";
 
-use PhpWeb\Middleware\AccessControlMiddleware;
-use PhpWeb\Middleware\ExceptionHandlerMiddleware;
-use PhpWeb\Middleware\SessionMiddleware;
+use Anskh\PhpWeb\Middleware\AccessControlMiddleware;
+use Anskh\PhpWeb\Middleware\ExceptionHandlerMiddleware;
+use Anskh\PhpWeb\Middleware\SessionMiddleware;
 use Laminas\Diactoros\{
     Response,
     ServerRequestFactory
 };
 use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
-use PhpWeb\Config\Config;
-use PhpWeb\Config\Environment;
-use PhpWeb\Http\Kernel;
+use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Config\Environment;
+use Anskh\PhpWeb\Http\Kernel;
 use WoohooLabs\Harmony\Middleware\{
     DispatcherMiddleware,
     FastRouteMiddleware,

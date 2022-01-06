@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Http\Auth;
+namespace Anskh\PhpWeb\Http\Auth;
 
 class UserIdentity implements UserIdentityInterface
 {

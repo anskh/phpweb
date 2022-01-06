@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use PhpWeb\Config\Config;
+use Anskh\PhpWeb\Config\Config;
 
 return [
     // list of route name which needs auth

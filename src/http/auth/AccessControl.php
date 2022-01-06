@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Http\Auth;
+namespace Anskh\PhpWeb\Http\Auth;
 
 use InvalidArgumentException;
 use Laminas\Diactoros\Response;
 use PDO;
-use PhpWeb\Config\Config;
-use PhpWeb\Http\Session\Session;
-use PhpWeb\Model\User;
+use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Http\Session\Session;
+use Anskh\PhpWeb\Model\User;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-use function PhpWeb\app;
-use function PhpWeb\client_ip;
-use function PhpWeb\user_agent;
+use function Anskh\PhpWeb\app;
+use function Anskh\PhpWeb\client_ip;
+use function Anskh\PhpWeb\user_agent;
 
 class AccessControl implements AccessControlInterface
 {

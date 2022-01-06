@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Model;
+namespace Anskh\PhpWeb\Model;
 
 use ReflectionClass;
 

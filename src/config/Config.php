@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Config;
+namespace Anskh\PhpWeb\Config;
 
 use ArrayAccess;
+use Psr\Container\ContainerInterface;
 
-class Config implements ArrayAccess
+class Config implements ArrayAccess, ContainerInterface
 {
     public const ATTR_APP_CONFIG = 'application';
     public const ATTR_DB_CONFIG = 'database';
@@ -67,46 +68,51 @@ class Config implements ArrayAccess
     protected string $path;
     protected string $environment;
 
-    public function __construct(string $path, ?string $environment = null)
+    public function __construct(string $path, string $environment = Environment::DEVELOPMENT)
     {
         $this->path = $path;
         $this->environment = $environment;
     }
 
-    public function get(string $key, $defaultValue = null)
+    public function get(string $id)
     {
-        return $this->offsetGet($key) ?? $defaultValue;
+        return $this->offsetGet($id) ?? null;
     }
 
-    public function set(string $key, $value): void
+    public function has(string $id): bool
+    {
+        return $this->offsetExists($id);
+    }
+
+    public function set(string $id, $value): void
     {
 
-        if(is_array($key)){
-            foreach($key as $innerKey => $innerValue){
-                $this->arraySet($this->container, $innerKey, $innerValue);
+        if(is_array($id)){
+            foreach($id as $innerid => $innerValue){
+                $this->arraySet($this->container, $innerid, $innerValue);
             }
         }else{
-            $this->arraySet($this->container, $key, $value);
+            $this->arraySet($this->container, $id, $value);
         }
 
     }
 
-    protected function arraySet(array &$array, string $key, $value): array
+    protected function arraySet(array &$array, string $id, $value): array
     {
-        if(empty($key)){
+        if(empty($id)){
             return $array = $value;
         }
 
-        $keys = explode(".", $key);
-        while(count($keys) > 1){
-            $key = array_shift($keys);
-            if(!isset($array[$key]) || !is_array($array[$key])){
-                $array[$key] = [];
+        $ids = explode(".", $id);
+        while(count($ids) > 1){
+            $id = array_shift($ids);
+            if(!isset($array[$id]) || !is_array($array[$id])){
+                $array[$id] = [];
             }
 
-            $array = &$array[$key];
+            $array = &$array[$id];
         }
-        $array[array_shift($keys)] = $value;
+        $array[array_shift($ids)] = $value;
 
         return $array;
     }

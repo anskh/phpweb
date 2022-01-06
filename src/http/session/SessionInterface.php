@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Http\Session;
+namespace Anskh\PhpWeb\Http\Session;
 
 interface SessionInterface
 {

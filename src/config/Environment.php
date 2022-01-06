@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Config;
+namespace Anskh\PhpWeb\Config;
 
 class Environment
 {

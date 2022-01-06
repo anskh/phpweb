@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace PhpWeb\Model;
+namespace Anskh\PhpWeb\Model;
 
 use DateTime;
-use PhpWeb\Model\Form\Form;
+use Anskh\PhpWeb\Model\Form\Form;
 use Psr\Http\Message\ServerRequestInterface;
 use Exception;
 use PDO;
 
-use function PhpWeb\app;
+use function Anskh\PhpWeb\app;
 
 class FormModel extends Model
 {
