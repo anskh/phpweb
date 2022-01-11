@@ -2,48 +2,55 @@
 
 declare(strict_types=1);
 
-use Anskh\PhpWeb\Config\Config;
 use Anskh\PhpWeb\Db\Database;
 use Anskh\PhpWeb\Db\Migration;
+use Anskh\PhpWeb\Http\Auth\AccessControl;
+
+/**
+* Filter table for accesscontrol if driver is set to db
+*
+* @author     Khaerul Anas <anasikova@gmail.com>
+* @copyright  2021-2022 Anskh Labs.
+* @version    1.0.0
+*/
 
 class m0001_filter extends Migration
 {
-    protected string $table = Config::ATTR_ACCESSCONTROL_FILTER;
+    protected string $table = AccessControl::ATTR_FILTER;
 
     public function up(): bool
     {
-        $db = my_app()->db($this->connection);
-        $type = $db->getDbType();
-        $table = $db->table($this->table);
+        $type = $this->db->getType();
+        $table = $this->db->getTable($this->table);
 
         if ($type === Database::PGSQL) {
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
-                $db->quoteAttribute('id') . ' serial,' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_LIST) . ' TEXT NULL,'.
-                'PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+                $this->db->q('id') . ' serial,' .
+                $this->db->q(AccessControl::ATTR_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $this->db->q(AccessControl::ATTR_FILTER_LIST) . ' TEXT NULL,'.
+                'PRIMARY KEY (' . $this->db->q('id') . '));';
         } elseif ($type === Database::MYSQL) {
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
-                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCEMENT,' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_LIST) . ' TEXT NULL,'.
-                'PRIMARY KEY (' . $db->quoteAttribute('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
+                $this->db->q('id') . ' INT NOT NULL AUTO_INCREMENT,' .
+                $this->db->q(AccessControl::ATTR_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE,' .
+                $this->db->q(AccessControl::ATTR_FILTER_LIST) . ' TEXT NULL,'.
+                'PRIMARY KEY (' . $this->db->q('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
         } elseif ($type === Database::SQLITE) {
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '(' .
-                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCEMENT,' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_LIST) . ' TEXT NULL,'.
-                'PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+                $this->db->q('id') . ' INT NOT NULL AUTO_INCREMENT,' .
+                $this->db->q(AccessControl::ATTR_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $this->db->q(AccessControl::ATTR_FILTER_LIST) . ' TEXT NULL,'.
+                'PRIMARY KEY (' . $this->db->q('id') . '));';
         } elseif ($type === Database::SQLSRV) {
             $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '(' .
-                $db->quoteAttribute('id') . ' INT IDENTITY,' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_FILTER_LIST) . ' TEXT NULL,'.
-                'PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+                $this->db->q('id') . ' INT IDENTITY,' .
+                $this->db->q(AccessControl::ATTR_FILTER_TYPE) . ' VARCHAR(255) NOT NULL UNIQUE, ' .
+                $this->db->q(AccessControl::ATTR_FILTER_LIST) . ' TEXT NULL,'.
+                'PRIMARY KEY (' . $this->db->q('id') . '));';
         }
 
         try {
-            $db->connection()->exec($sql);
+            $this->db->getConnection()->exec($sql);
         } catch (Exception $e) {
             return false;
         }
@@ -53,19 +60,19 @@ class m0001_filter extends Migration
 
     public function seed(): bool
     {
-        $filters = my_app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_FILTER);
-        $data = [];
-        
-        foreach($filters as $key => $val)
-        {
-            $data[] = [
-                Config::ATTR_ACCESSCONTROL_FILTER_TYPE => $key, 
-                Config::ATTR_ACCESSCONTROL_FILTER_LIST => empty($val) ? null: implode(Config::ACCESSCONTROL_SEPARATOR, $val)
+        $data = [
+            [
+                AccessControl::ATTR_FILTER_TYPE => AccessControl::FILTER_IP, 
+                AccessControl::ATTR_FILTER_LIST => '10.0.0.*|8.8.8.8'
+            ],
+            [
+                AccessControl::ATTR_FILTER_TYPE => AccessControl::FILTER_USER_AGENT, 
+                AccessControl::ATTR_FILTER_LIST => null
+            ]
             ];
-        }
             
         try {
-            if (my_app()->db($this->connection)->insert($data, $this->table) > 0) return true;
+            if ($this->db->insertBatch($data, $this->table) > 0) return true;
         } catch (Exception $e) {
             return false;
         }

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Anskh\PhpWeb\Middleware;
 
+namespace Anskh\PhpWeb\Middleware;
+
+use Anskh\PhpWeb\Http\App;
+use Anskh\PhpWeb\Http\AppException;
+use Anskh\PhpWeb\Http\Environment;
 use Laminas\Diactoros\Response;
 use Monolog\Handler\FirePHPHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use Anskh\PhpWeb\Config\Config;
-use Anskh\PhpWeb\Config\Environment;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -20,10 +23,31 @@ use WoohooLabs\Harmony\Exception\RouteNotFound;
 use Whoops\Run;
 use Whoops\Handler\PrettyPageHandler;
 
+/**
+* ExceptionHandlerMiddleware
+*
+* @package    Anskh\PhpWeb\Middleware
+* @author     Khaerul Anas <anasikova@gmail.com>
+* @copyright  2021-2022 Anskh Labs.
+* @version    1.0.0
+*/
 final class ExceptionHandlerMiddleware implements MiddlewareInterface
 {
+    private string $exceptionAttribute;
+
     /**
-     * 
+    * Constructor
+    *
+    * @param  string $exceptionAttribute exception attribute, default is 'exception'
+    * @return void
+    */
+    public function __construct(string $exceptionAttribute = 'exception')
+    {
+        $this->exceptionAttribute = $exceptionAttribute;
+    }
+
+    /**
+     * @inheritdoc
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -37,11 +61,14 @@ final class ExceptionHandlerMiddleware implements MiddlewareInterface
     }
 
     /**
-     * 
-     */
+    * Handle not found
+    *
+    * @return ResponseInterface response
+    */
     private function handleNotFound(): ResponseInterface
     {
-        $notfound = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_NOTFOUND);
+        $attributeNotFound = AppException::ATTR_NOTFOUND;
+        $notfound = my_config()->get("{$this->exceptionAttribute}.{$attributeNotFound}");
         if ($notfound && is_callable($notfound)) {
             return $notfound();
         } else {
@@ -53,24 +80,31 @@ final class ExceptionHandlerMiddleware implements MiddlewareInterface
     }
 
     /**
-     * 
-     */
+    * Handle throwable
+    *
+    * @param  Throwable $exception Throwable
+    * @return ResponseInterface response
+    */
     private function handleThrowable(Throwable $exception): ResponseInterface
     {
-        $log = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_LOG);
-        if($log){
-            $logger = new Logger($log[Config::ATTR_EXCEPTION_LOG_NAME]);
-            $logger->pushHandler(new StreamHandler($log[Config::ATTR_EXCEPTION_LOG_FILE]));
+        $attributeEnableLog = AppException::ATTR_LOG_ENABLE;
+        $logEnable = my_config()->get("{$this->exceptionAttribute}.{$attributeEnableLog}");
+        if($logEnable){
+            $attributeLogName = AppException::ATTR_LOG_NAME;
+            $logger = new Logger($attributeLogName);
+            $attributeLogFile= AppException::ATTR_LOG_FILE;
+            $logger->pushHandler(new StreamHandler($attributeLogFile));
             $logger->pushHandler(new FirePHPHandler());
             $logger->error($exception->getMessage());
         }
 
-        $throwable = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_THROWABLE);
+        $attributeThrowable = AppException::ATTR_THROWABLE;
+        $throwable = my_config()->get("{$this->exceptionAttribute}.{$attributeThrowable}");
         if($throwable && is_callable($throwable)){
             return $throwable();
         }else{
             $response = new Response();
-            if(my_app()->environment === Environment::DEVELOPMENT){
+            if(my_config()->getEnvironment() === Environment::DEVELOPMENT){
                 $whoops = new Run();
                 $whoops->allowQuit(false);
                 $whoops->writeToOutput(false);

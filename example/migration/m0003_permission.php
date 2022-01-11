@@ -2,46 +2,51 @@
 
 declare(strict_types=1);
 
-use Anskh\PhpWeb\Config\Config;
 use Anskh\PhpWeb\Db\Database;
 use Anskh\PhpWeb\Db\Migration;
+use Anskh\PhpWeb\Http\Auth\AccessControl;
 
-
+/**
+* Permission config when access conrol driver set to db
+*
+* @author     Khaerul Anas <anasikova@gmail.com>
+* @copyright  2021-2022 Anskh Labs.
+* @version    1.0.0
+*/
 class m0003_permission extends Migration
 {
-    protected string $table = Config::ATTR_ACCESSCONTROL_PERMISSION;
+    protected string $table = AccessControl::ATTR_PERMISSION;
 
     public function up(): bool
     {
-        $db = my_app()->db($this->connection);
-        $type = $db->getDbType();
-        $table = $db->table($this->table);
+        $type = $this->db->getType();
+        $table = $this->db->getTable($this->table);
         
         if($type === Database::PGSQL){
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '( ' .
-                $db->quoteAttribute('id') . ' serial,' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
-                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+                $this->db->q('id') . ' serial,' .
+                $this->db->q(AccessControl::ATTR_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $this->db->q('id') . '));';
         }elseif($type === Database::MYSQL){
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '('.
-                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT,' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
-                PRIMARY KEY (' . $db->quoteAttribute('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
+                $this->db->q('id') . ' INT NOT NULL AUTO_INCREMENT,' .
+                $this->db->q(AccessControl::ATTR_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $this->db->q('id') . '))ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;';
         }elseif($type === Database::SQLITE){
             $sql = 'CREATE TABLE IF NOT EXISTS ' . $table . '('.
-                $db->quoteAttribute('id') . ' INT NOT NULL AUTO_INCREMENT,' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
-                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+                $this->db->q('id') . ' INT NOT NULL AUTO_INCREMENT,' .
+                $this->db->q(AccessControl::ATTR_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $this->db->q('id') . '));';
         }elseif($type === Database::SQLSRV){
             $sql = 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NULL CREATE TABLE ' . $table . '('.
-                $db->quoteAttribute('id') . ' INT IDENTITY(1,1),' .
-                $db->quoteAttribute(Config::ATTR_ACCESSCONTROL_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
-                PRIMARY KEY (' . $db->quoteAttribute('id') . '));';
+                $this->db->q('id') . ' INT IDENTITY(1,1),' .
+                $this->db->q(AccessControl::ATTR_PERMISSION_NAME) . ' VARCHAR(255) NOT NULL UNIQUE,
+                PRIMARY KEY (' . $this->db->q('id') . '));';
         }
 
         try
         {
-            $db->connection()->exec($sql);
+            $this->db->getConnection()->exec($sql);
         }catch(Exception $e){
             return false;
         }
@@ -51,15 +56,13 @@ class m0003_permission extends Migration
 
     public function seed(): bool
     {
-        $permissions = my_app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_PERMISSION, []);
-        $data = [];
-        foreach($permissions as $permission)
-        {
-            $data[] = [Config::ATTR_ACCESSCONTROL_PERMISSION_NAME => $permission];
-        }
+        $data = [
+            [AccessControl::ATTR_PERMISSION_NAME => 'home'],
+            [AccessControl::ATTR_PERMISSION_NAME => 'hello']
+        ];
 
         try {
-            if(my_app()->db($this->connection)->insert($data, $this->table) > 0) return true;
+            if($this->db->insertBatch($data, $this->table) > 0) return true;
         } catch (Exception $e) {
             return false;
         }

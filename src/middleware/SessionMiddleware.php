@@ -10,8 +10,19 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+/**
+* SessionMiddleware
+*
+* @package    Anskh\PhpWeb\Middleware
+* @author     Khaerul Anas <anasikova@gmail.com>
+* @copyright  2021-2022 Anskh Labs.
+* @version    1.0.0
+*/
 final class SessionMiddleware implements MiddlewareInterface
 {
+    /**
+     * @inheritdoc
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $cookies = $request->getCookieParams();
@@ -37,6 +48,12 @@ final class SessionMiddleware implements MiddlewareInterface
         return $response->withHeader('Set-Cookie', sprintf('%s=%s; path=%s', session_name(), $sid, ini_get('session.cookie_path')));
     }
 
+    /**
+    * Start Session
+    *
+    * @param  string $id session id
+    * @return void
+    */
     private function startSession(string $id): void
     {
         session_id($id);

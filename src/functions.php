@@ -2,26 +2,51 @@
 
 declare(strict_types=1);
 
-use Laminas\Diactoros\Response;
-use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Http\App;
+use Anskh\PhpWeb\Http\Config;
 use Anskh\PhpWeb\Http\Kernel;
+use Laminas\Diactoros\Response;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Views\PhpRenderer;
 
 /**
- * 
- */
+* List of core function
+*
+* @author     Khaerul Anas <anasikova@gmail.com>
+* @copyright  2021-2022 Anskh Labs.
+* @version    1.0.0
+*/
+
 if (!function_exists('my_app')) {
-    function my_app(): Kernel
+    /**
+    * Get current app
+    *
+    * @return App current app
+    */
+    function my_app(): App
     {
-        return Kernel::getInstance();
+        return Kernel::app();
     }
 }
 
-/**
- * 
- */
+if (!function_exists('my_config')) {
+    /**
+    * Get current config hadler
+    *
+    * @return Anskh\PhpWeb\Http\Config current config handler
+    */
+    function my_config(): Config
+    {
+        return Kernel::config();
+    }
+}
+
 if (!function_exists('my_client_ip')) {
+    /**
+    * Get client ip v4
+    *
+    * @return string ip v4, if fail return 'unknown'
+    */
     function my_client_ip(): string
     {
         if ($ip = getenv('HTTP_CLIENT_IP')) :
@@ -38,6 +63,7 @@ if (!function_exists('my_client_ip')) {
             $ip = getenv('REMOTE_ADDR');
         }
 
+        // if local ip
         if(!$ip){
             $ip = gethostbyname(gethostname());
         }
@@ -50,20 +76,25 @@ if (!function_exists('my_client_ip')) {
     }
 }
 
-/**
- * 
- */
 if (!function_exists('my_user_agent')) {
+    /**
+    * Get client user agent
+    *
+    * @return string Client user agent, if fail return 'unknown'
+    */
     function my_user_agent(): string
     {
-        return my_app()->request()->getServerParams()['HTTP_USER_AGENT'] ?? '';
+        return $_SERVER['HTTP_USER_AGENT'] ?? 'uknown';
     }
 }
 
-/**
- * 
- */
 if(!function_exists('my_class_name')){
+    /**
+    * Get class name, without namespace
+    *
+    * @param  string|object $class full class name or object
+    * @return string class name
+    */
     function my_class_name($class): string
     {
         if (is_object($class)) {
@@ -80,89 +111,66 @@ if(!function_exists('my_class_name')){
     }
 }
 
-/**
- * 
- */
-if (!function_exists('my_str_search')) {
-    function my_str_search(string $search, string $string, int $startpos = 0): int
-    {
-        $position = strpos($string, $search, $startpos);
-        if (is_numeric($position)) {
-            return $position;
-        }
-        
-        return -1;
-    }
-}
-
-/**
- * 
- */
 if (!function_exists('my_str_starts_with')) {
-    function my_str_starts_with(string $string, string $startString): bool
+    /**
+    * Check if $haystack has start with $needle
+    *
+    * @param  string $haystack String to check
+    * @param  string $needle   String to search
+    * @return bool true if $haystack start with $needle
+    */
+    function my_str_starts_with(string $haystack, string $needle): bool
     {
-        $len = strlen($startString);
+        $len = strlen($needle);
 
-        if (strlen($string) < $len) {
+        if (strlen($haystack) < $len) {
             return false;
         }
 
-        return (substr($string, 0, $len) === $startString);
+        return (substr($haystack, 0, $len) === $needle);
     }
 }
 
 if (!function_exists('my_str_ends_with')) {
-    function my_str_ends_with(string $string, string $endString): bool
+    /**
+    * Check if $haystack has end with $needle
+    *
+    * @param  string $haystack String to check
+    * @param  string $needle   String to search
+    * @return bool true if $haystack end with $needle
+    */
+    function my_str_ends_with(string $haystack, string $needle): bool
     {
-        $len = strlen($endString);
+        $len = strlen($needle);
 
         if ($len == 0) {
             return true;
         }
 
-        if (strlen($string) < $len) {
+        if (strlen($haystack) < $len) {
             return false;
         }
 
-        return (substr($string, -$len) === $endString);
+        return (substr($haystack, -$len) === $needle);
     }
 }
 
-/**
- * 
- */
 if (!function_exists('my_current_route')) {
+    /**
+    * Get current route name
+    *
+    * @return string route name
+    */
     function my_current_route(): string
     {
-        $path = my_app()->request()->getUri()->getPath();
-
-        $routes = my_app()->config(Config::ATTR_ROUTE_CONFIG, []);
-        $base_path = my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEPATH , '');
-
-        foreach ($routes as $permission => $route) {
-
-            $route_path = $base_path . $route[1];
-            $search = ["{", "["];
-
-            foreach ($search as $s) {
-                $pos = my_str_search($s, $route_path, 1);
-                if ($pos >= 0) {
-                    $route_path = substr($route_path, 0, $pos);
-                }
-            }
-
-            if ($route_path !== $base_path . $route[1]) {
-                if (str_starts_with($path, $route_path)) {
-                    return $permission;
-                }
-            } else {
-                if ($path === $route_path) {
-                    return $permission;
-                }
-            }
+        static $current_route;
+        if($current_route){
+            return $current_route; 
         }
 
-        return '';
+        $path = my_app()->request()->getUri()->getPath();
+
+        return my_app()->router()->getRouteName($path);
     }
 }
 
@@ -172,30 +180,7 @@ if (!function_exists('my_current_route')) {
 if (!function_exists('my_route_to')) {
     function my_route_to(string $name, array $params = []): string
     {
-        $route = my_app()->config(Config::ATTR_ROUTE_CONFIG . ".$name", []);
-        $base_path = my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEPATH , '');
-
-        if (empty($route)) {
-            throw new InvalidArgumentException("Route not found.");
-        }
-
-        $url = $route[1];
-
-        if (my_str_search("{", $url, 1) >= 0 && !$params) {
-            throw new InvalidArgumentException("route $name can't be empty params");
-        }
-
-
-        if ($params) {
-            $search = [":\d", "+", ":\w"];
-            $replace = "";
-            $url = str_replace($search, $replace, $url);
-            foreach ($params as $param => $value) {
-                $url = str_replace("{{$param}}", $value, $url);
-            }
-        }
-
-        return $base_path . $url;
+        return my_app()->router()->routeUrl($name, $params);
     }
 }
 
@@ -206,13 +191,14 @@ if (!function_exists("my_view")) {
     function my_view(string $view, ?ResponseInterface $response = null, string $layout = '', array $data = [], int $status = 200): ResponseInterface
     {
         $response = $response ?? new Response();
-        $config = my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_VIEW);
-        $view .= $config[Config::ATTR_VIEW_FILE_EXT];
-        if (!empty($layout)) {
-            $layout = $layout . $config[Config::ATTR_VIEW_FILE_EXT];
+        $path = my_app()->getAttribute(App::ATTR_VIEW_PATH);
+        $ext = my_app()->getAttribute(App::ATTR_VIEW_EXT);
+        $view .= $ext;
+        if ($layout) {
+            $layout .= $ext;
         }
-        $renderer = new PhpRenderer($config[Config::ATTR_VIEW_PATH], $data, $layout);
-        $renderer->render($response, $view);
+        $renderer = new PhpRenderer($path, $data, $layout);
+        $response = $renderer->render($response, $view);
 
         return $response->withStatus($status);
     }
@@ -224,7 +210,7 @@ if (!function_exists("my_view")) {
 if (!function_exists("my_base_url")) {
     function my_base_url(string $url): string
     {
-        return my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_BASEURL) . '/' . $url;
+        return my_app()->getAttribute(App::ATTR_BASEURL) . '/' . $url;
     }
 }
 

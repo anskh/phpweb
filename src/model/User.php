@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace Anskh\PhpWeb\Model;
 
+/**
+* User class
+*
+* @package    Anskh\PhpWeb\Model
+* @author     Khaerul Anas <anasikova@gmail.com>
+* @copyright  2021-2022 Anskh Labs.
+* @version    1.0.0
+*/
 class User extends DbModel
 {
     public const ATTR_TABLE = 'user';

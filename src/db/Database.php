@@ -4,83 +4,146 @@ declare(strict_types=1);
 
 namespace Anskh\PhpWeb\Db;
 
+use Anskh\PhpWeb\Http\App;
+use InvalidArgumentException;
 use PDO;
-use Anskh\PhpWeb\Config\Config;
 
-use function Anskh\PhpWeb\app;
-
-class Database
+/**
+ * Database class
+ *
+ * @package    Anskh\PhpWeb
+ * @author     Khaerul Anas <anasikova@gmail.com>
+ * @copyright  2021-2022 Anskh Labs.
+ * @version    1.0.0
+ */
+class Database implements DatabaseInterface
 {
-    public const MYSQL = 'mysql';
+    public const ATTR_DSN               = 'dsn';
+    public const ATTR_USER              = 'user';
+    public const ATTR_PASS              = 'password';
+    public const ATTR_SCHEMA            = 'schema';
+    public const ATTR_PREFIX            = 'prefix';
+
+    public const MYSQL  = 'mysql';
     public const SQLITE = 'sqlite';
-    public const PGSQL = 'pgsql';
+    public const PGSQL  = 'pgsql';
     public const SQLSRV = 'sqlsrv';
 
-    protected static $instance = null;
-    protected array $db = [];
-    protected array $config = [];
-    protected ?string $connection = null;
+    protected static DatabaseInterface $instance;
+    protected array  $db = [];
+    protected array  $config = [];
+    protected string $connection;
+    protected array  $attributes = [
+        self::ATTR_DSN,
+        self::ATTR_USER,
+        self::ATTR_PASS,
+        self::ATTR_SCHEMA,
+        self::ATTR_PREFIX
+    ];
 
-    private final function __construct()
+    /**
+     * Constructor
+     *
+     * @param  string $connection  Db connection
+     * @param  string $dbAttribute Db attribute configuration
+     * @return void
+     */
+    private final function __construct(string $connection, string $dbAttribute = 'db')
     {
-        $this->connection = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_DEFAULT_CONNECTION);
-        $this->config = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_CONNECTION . '.' . $this->connection);
+        $this->connection = $connection;
+        $config = my_config()->get("{$dbAttribute}.{$this->connection}");
 
-        $dsn =  $this->config[Config::ATTR_DB_CONNECTION_DSN];
-        $username = $this->config[Config::ATTR_DB_CONNECTION_USER];
-        $password = $this->config[Config::ATTR_DB_CONNECTION_PASSWD];
+        $dsn =  $config[self::ATTR_DSN];
+        $username = $config[self::ATTR_USER];
+        $password = $config[self::ATTR_PASS];
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
         ];
         $this->db[$this->connection] = new PDO($dsn, $username, $password, $options);
+        $this->config = $config;
     }
 
-    public static function connect(?string $connection = null): self
+    /**
+     * @inheritdoc
+     */
+    public function getAttribute($id)
     {
-        if (!self::$instance) {
-            self::$instance = new Database();
+        if (!in_array($id, $this->attributes)) {
+            throw new InvalidArgumentException("$id not valid.");
         }
 
-        $connection = $connection ?? self::$instance->connection;
+        return $this->config[$id] ?? null;
+    }
 
-        if (!self::$instance->db[$connection]) {
+    /**
+     * @inheritdoc
+     */
+    public function setAttribute($id, $value): void
+    {
+        if (!in_array($id, $this->attributes)) {
+            throw new InvalidArgumentException("$id not valid.");
+        }
+
+        $this->config[$id] = $value;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public static function connect(string $connection, string $dbAttribute = 'db'): DatabaseInterface
+    {
+        if (!isset(self::$instance)) {
+            self::$instance = new Database($connection, $dbAttribute);
+        }
+
+        if (!isset(self::$instance->db[$connection])) {
             self::$instance->connection = $connection;
-            self::$instance->config = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_CONNECTION . '.' . $connection);
+            $config = my_config()->get("{$dbAttribute}.{$connection}");
 
-            $dsn =  self::$instance->config[Config::ATTR_DB_CONNECTION_DSN];
-            $username = self::$instance->config[Config::ATTR_DB_CONNECTION_USER];
-            $password = self::$instance->config[Config::ATTR_DB_CONNECTION_PASSWD];
+            $dsn =  $config[self::ATTR_DSN];
+            $username = $config[self::ATTR_USER];
+            $password = $config[self::ATTR_PASS];
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
             ];
             self::$instance->db[$connection] = new PDO($dsn, $username, $password, $options);
+            self::$instance->config = $config;
         }
 
         return self::$instance;
     }
 
-    public function connection(): PDO
+    /**
+     * @inheritdoc
+     */
+    public function getConnection(): PDO
     {
         return $this->db[$this->connection];
     }
 
-    public function table(string $name): string
+    /**
+     * @inheritdoc
+     */
+    public function getTable(string $name): string
     {
-        if ($prefix = app()->config(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_PREFIX)) {
-            $name = $this->quoteAttribute($prefix . $name);
-        }else{
-            $name = $this->quoteAttribute($name);
+        if ($prefix = $this->config[self::ATTR_PREFIX]) {
+            $name = $this->q($prefix . $name);
+        } else {
+            $name = $this->q($name);
         }
 
-        if($schema = $this->config[Config::ATTR_DB_CONNECTION_SCHEMA] ?? ''){
-            $name = $this->quoteAttribute($schema) . '.' . $name;
+        if ($schema = $this->config[self::ATTR_SCHEMA]) {
+            $name = $this->q($schema) . '.' . $name;
         }
 
         return  $name;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function insert(array $data, string $table): int
     {
         $affectedRows = 0;
@@ -89,11 +152,11 @@ class Database
             return $affectedRows;
         }
 
-        $table = $this->table($table);
+        $table = $this->getTable($table);
         $data = array_filter($data, 'strlen');
         $keys = array_keys($data);
-        $sql = "INSERT INTO $table(" .  implode(',', array_map(fn ($attr) => $this->quoteAttribute($attr), $keys)) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
-        $stmt = $this->connection()->prepare($sql);
+        $sql = "INSERT INTO $table(" .  implode(',', array_map(fn ($attr) => $this->q($attr), $keys)) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
+        $stmt = $this->getConnection()->prepare($sql);
         if ($stmt->execute(array_values($data))) {
             $affectedRows += $stmt->rowCount();
         }
@@ -101,6 +164,9 @@ class Database
         return $affectedRows;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function insertBatch(array $data, string $table): int
     {
         $affectedRows = 0;
@@ -116,7 +182,10 @@ class Database
         return $affectedRows;
     }
 
-    public function update(array $data, string $table, $where): int
+    /**
+     * @inheritdoc
+     */
+    public function update(array $data, string $table, $where = ''): int
     {
         $affectedRows = 0;
 
@@ -124,31 +193,31 @@ class Database
             return $affectedRows;
         }
 
-        $table = $this->table($table);
+        $table = $this->getTable($table);
 
         $nullString = '';
         $keys = [];
-        foreach($data as $key => $val){
-            if(is_null($val)){
-                if(empty($nullString)){
+        foreach ($data as $key => $val) {
+            if (is_null($val)) {
+                if (empty($nullString)) {
                     $nullString = $key . '=NULL,';
-                }else{
+                } else {
                     $nullString .= ',' . $key . '=NULL';
                 }
-            }else{
+            } else {
                 $keys[] = $key;
             }
         }
-        
-        if($keys){
-            if($nullString){
+
+        if ($keys) {
+            if ($nullString) {
                 $nullString .= ',';
             }
-            $sql = "UPDATE $table SET $nullString" . implode(',', array_map(fn ($attr) => $this->quoteAttribute($attr) . "=?", $keys));
-        }else{
+            $sql = "UPDATE $table SET $nullString" . implode(',', array_map(fn ($attr) => $this->q($attr) . "=?", $keys));
+        } else {
             $sql = "UPDATE $table SET $nullString";
-        }     
-        
+        }
+
         if ($where) {
             if (is_string($where)) {
                 $sql .= " WHERE " . $where;
@@ -162,7 +231,7 @@ class Database
                 $sql .= " WHERE " . implode($op, $whereParams);
             }
         }
-        $stmt = $this->connection()->prepare($sql . ";");
+        $stmt = $this->getConnection()->prepare($sql . ";");
 
         $params = is_array($where) ? array_merge(array_values($data), array_values($where)) : array_values($data);
         $params = array_filter($params, 'strlen');
@@ -173,9 +242,12 @@ class Database
         return $affectedRows;
     }
 
-    public function delete(string $table, $where): int
+    /**
+     * @inheritdoc
+     */
+    public function delete(string $table, $where = ''): int
     {
-        $table = $this->table($table);
+        $table = $this->getTable($table);
         $sql = "DELETE FROM $table";
         if ($where) {
             if (is_string($where)) {
@@ -191,7 +263,7 @@ class Database
             }
         }
 
-        $stmt = $this->connection()->prepare($sql . ";");
+        $stmt = $this->getConnection()->prepare($sql . ";");
         if (is_array($where)) {
             if ($stmt->execute(array_values($where))) {
                 return $stmt->rowCount();
@@ -205,9 +277,12 @@ class Database
         return 0;
     }
 
-    public function select(string $table, string $column = '*', $where = '', int $limit = 0, string $orderby = '', int $fetch = PDO::FETCH_ASSOC)
+    /**
+     * @inheritdoc
+     */
+    public function select(string $table, string $column = '*', $where = '', int $limit = 0, string $orderby = '', int $fetch = PDO::FETCH_ASSOC): array
     {
-        $table = $this->table($table);
+        $table = $this->getTable($table);
         $sql = "SELECT $column FROM $table";
         if ($where) {
             if (is_string($where)) {
@@ -229,7 +304,7 @@ class Database
             $sql .= " ORDER BY " . $orderby;
         }
 
-        $stmt = $this->connection()->prepare($sql . ";");
+        $stmt = $this->getConnection()->prepare($sql . ";");
         if (is_array($where)) {
             $stmt->execute(array_values($where));
         } else {
@@ -239,17 +314,22 @@ class Database
         return $stmt->fetchAll($fetch);
     }
 
-    public function getDbType(): string
+    /**
+     * @inheritdoc
+     */
+    public function getType(): string
     {
-        return $this->connection()->getAttribute(PDO::ATTR_DRIVER_NAME);
+        return $this->getConnection()->getAttribute(PDO::ATTR_DRIVER_NAME);
     }
 
-    public function quoteAttribute(string $attribute): string
+    /**
+     * @inheritdoc
+     */
+    public function q(string $attribute): string
     {
-        $type = $this->getDbType();
+        $type = $this->getType();
 
-        switch($type)
-        {
+        switch ($type) {
             case self::MYSQL:
                 return '`' . $attribute . '`';
                 break;
@@ -263,6 +343,5 @@ class Database
             default:
                 return $attribute;
         }
-
     }
 }

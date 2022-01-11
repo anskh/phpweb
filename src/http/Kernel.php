@@ -4,130 +4,63 @@ declare(strict_types=1);
 
 namespace Anskh\PhpWeb\Http;
 
-use Anskh\PhpWeb\Config\Config;
-use Anskh\PhpWeb\Config\Environment;
-use Anskh\PhpWeb\Db\Database;
-use Anskh\PhpWeb\Db\MigrationBuilder;
-use Anskh\PhpWeb\Http\Auth\UserIdentity;
-use Anskh\PhpWeb\Http\Auth\UserIdentityInterface;
-use Anskh\PhpWeb\Http\Session\Session;
-use Anskh\PhpWeb\Http\Session\SessionInterface;
-use Anskh\PhpWeb\Model\DbModel;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use WoohooLabs\Harmony\Harmony;
+use Exception;
 
+/**
+* Kernel class
+*
+* @package    Anskh\PhpWeb\Http
+* @author     Khaerul Anas <anasikova@gmail.com>
+* @copyright  2021-2022 Anskh Labs.
+* @version    1.0.0
+*/
 class Kernel
 {
-    public string $environment;
-
-    private static Kernel $instance;
-    private string $connection;
-    private Harmony $app;
-    private Config $config;
+    protected static App    $app;
+    protected static Config $config;
 
     /**
-     * 
-     */
-    private final function __construct()
-    {       
+    * Init app and config
+    *
+    * @param  string $rootDir      Directory of app
+    * @param  string $configDir    Directory of config file
+    * @param  string $AppConfig    app config file
+    * @param  string $environment  Environment type, 'production' or 'development'
+    * @return void description
+    */
+    public static function init(string $rootDir, string $configDir, string $appConfig = 'app', string $environment = Environment::DEVELOPMENT): void
+    {
+        self::$config = new Config($configDir, $environment);
+        self::$app = new App($rootDir, self::$config->get($appConfig));
     }
 
-    public static function getInstance(): self
+    /**
+    * Get current app
+    *
+    * @throws \Exception Throw exception if Anskh\PhpWeb\Http\App is not init before
+    * @return App Current app
+    */
+    public static function app(): App
     {
-        if(!isset(self::$instance)){
-            self::$instance = new static();
+        if(!isset(self::$app)){
+            throw new Exception('Please call Kerner::init() first.');
         }
 
-        return self::$instance;
+        return self::$app;
     }
 
     /**
-     * 
-     */
-    public static function init(string $path, ?string $environment = null): void
+    * Get current config object
+    *
+    * @throws \Exception Throw exception if Anskh\PhpWeb\Http\Config is not init before
+    * @return ConfigInterface config 
+    */
+    public static function config(): ConfigInterface
     {
-        $environment = $environment ?? Environment::DEVELOPMENT;
-        self::getInstance()->environment = $environment;
-        self::getInstance()->config = new Config($path, $environment);
-        self::getInstance()->connection = self::getInstance()->config->get(Config::ATTR_DB_CONFIG . '.' . Config::ATTR_DB_DEFAULT_CONNECTION);
-    }
-
-    /**
-     * 
-     */
-    public static function handle(ServerRequestInterface $request, ResponseInterface $response) : Harmony
-    {
-        self::getInstance()->app =  new Harmony($request, $response);
-
-        return self::getInstance()->app;
-    }
-
-    /**
-     * 
-     */
-    public function config(?string $key = null, $defaultValue = null)
-    {
-        if($key){
-            return $this->config->get($key, $defaultValue);
-        }else{
-            return $this->config;
-        }
-    }
-
-    /**
-     * 
-     */
-    public function user(): UserIdentityInterface
-    {
-        return $this->app->getRequest()->getAttribute(UserIdentity::class);
-    }
-
-    /**
-     * 
-     */
-    public function session(): SessionInterface
-    {
-        return $this->app->getRequest()->getAttribute(Session::class);
-    }
-
-    /**
-     * 
-     */
-    public function request(): ServerRequestInterface
-    {
-        return $this->app->getRequest();
-    }
-
-    /**
-     * 
-     */
-    public function db(?string $connection = null): Database
-    {
-        $connection = $connection ?? $this->connection;
-        return Database::connect($connection);
-    }
-
-    /**
-     * 
-     */
-    public function dbModel(string $class): ?DbModel
-    {
-        $obj = new $class($this->connection);
-
-        if($obj instanceof DbModel){
-            return $obj;
+        if(!isset(self::$config)){
+            throw new Exception('Please call Kerner::init() first.');
         }
 
-        return null;
-    }
-
-    /**
-     * 
-     */
-    public function buildMigration(?string $connection = null, ?string $path = null, ?string $action = null): MigrationBuilder
-    {
-        $connection = $connection ?? $this->connection;
-        return new MigrationBuilder($connection, $path, $action);
+        return self::$config;
     }
 }

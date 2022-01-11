@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Anskh\PhpWeb\Middleware;
 
-use Anskh\PhpWeb\Config\Config;
 use Anskh\PhpWeb\Http\Auth\AccessControl;
 use Anskh\PhpWeb\Http\Auth\UserIdentity;
 use Psr\Http\Message\ResponseInterface;
@@ -12,11 +11,38 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+/**
+* AccessControlMiddleware
+*
+* @package    Anskh\PhpWeb\Middleware
+* @author     Khaerul Anas <anasikova@gmail.com>
+* @copyright  2021-2022 Anskh Labs.
+* @version    1.0.0
+*/
 final class AccessControlMiddleware implements MiddlewareInterface
 {
+    private string $accessControlAttribute;
+    private string $driver;
+
+    /**
+    * Contructor
+    *
+    * @param  string $accessControlAttribute access control attribute
+    * @param  string $driver access control driver
+    * @return void
+    */
+    public function __construct(string $accessControlAttribute = 'accesscontrol', string $driver = AccessControl::DRIVER_FILE)
+    {
+        $this->accessControlAttribute = $accessControlAttribute;
+        $this->driver = $driver;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $control = new AccessControl(my_app()->config(Config::ATTR_APP_CONFIG . '.' . Config::ATTR_APP_ACCESSCONTROL));
+        $control = new AccessControl($this->accessControlAttribute, $this->driver);
 
         $user = $control->authenticate();
         $request = $request->withAttribute(UserIdentity::class, $user);
@@ -40,11 +66,10 @@ final class AccessControlMiddleware implements MiddlewareInterface
         }
 
         // return forbidden if not authorized
-        if(!$control->authorize($user->getRoles(), $permission)){
+        if(!$control->authorize($user, $permission)){
             return $control->forbidden();
         }
 
         return $handler->handle($request);
     }
-
 }

@@ -10,8 +10,14 @@ use Psr\Http\Message\ServerRequestInterface;
 use Exception;
 use PDO;
 
-use function Anskh\PhpWeb\app;
-
+/**
+* Form model base class
+*
+* @package    Anskh\PhpWeb\Model
+* @author     Khaerul Anas <anasikova@gmail.com>
+* @copyright  2021-2022 Anskh Labs.
+* @version    1.0.0
+*/
 class FormModel extends Model
 {
     public const ATTR_RULE_REQUIRED ='required';
@@ -47,17 +53,30 @@ class FormModel extends Model
     protected array $errors = [];
     protected array $labels = [];
 
+    /**
+    * Constructor
+    *
+    * @param  array $rules    form rule validation
+    * @param  array $messages form error message
+    * @return void
+    */
     public function __construct(array $rules = [], array $messages = [])
     {
-        if(!empty($rules)){
+        if($rules){
             $this->rules = $rules;
         }
 
-        if(!empty($messages)){
+        if($messages){
             $this->messages = $messages;
         }
     }
 
+    /**
+    * Set validation rules
+    *
+    * @param  array $rules Rule validation
+    * @return void
+    */
     public function setRules(array $rules): void
     {
         foreach($rules as $attribute => $rule){
@@ -65,6 +84,13 @@ class FormModel extends Model
         }
     }
 
+    /**
+    * Set validation rule for soecific attribute
+    *
+    * @param  string       $attribute Form attribute
+    * @param  string|array $rule Rule validation
+    * @return void
+    */
     public function setRule(string $attribute, $rule): void
     {
         if(property_exists($this, $attribute)){
@@ -72,6 +98,12 @@ class FormModel extends Model
         }
     }
 
+    /**
+    * Set label attributes
+    *
+    * @param  array $labels Label attribute
+    * @return void
+    */
     public function setLabels(array $labels): void
     {
         foreach($labels as $attribute => $label){
@@ -79,6 +111,13 @@ class FormModel extends Model
         } 
     }
 
+    /**
+    * Set label for $attribute
+    *
+    * @param  string $attribute form attribute
+    * @param  string $label label to set
+    * @return void 
+    */
     public function setLabel(string $attribute, string $label): void
     {
         if(property_exists($this, $attribute)){
@@ -86,11 +125,23 @@ class FormModel extends Model
         }
     }
 
+    /**
+    * Get label for $attribute
+    *
+    * @param  string $attribute Form attribute
+    * @return string Label for $attribute
+    */
     public function getLabel(string $attribute): string
     {
         return $this->labels[$attribute] ?? $attribute;
     }
 
+    /**
+    * Set error message
+    *
+    * @param  array $messages Error messages
+    * @return void
+    */
     public function setMessages(array $messages): void
     {
         foreach($messages as $rule => $message){
@@ -98,16 +149,34 @@ class FormModel extends Model
         }
     }
 
+    /**
+    * Set message for $rule
+    *
+    * @param  string $rule Rule name
+    * @param  string $message error message for $rule
+    * @return void description
+    */
     public function setMessage(string $rule, string $message): void
     {
         $this->messages[$rule] = $message;
     }
 
-    public function skipValidation(bool $skip = true)
+    /**
+    * Set skip validation
+    *
+    * @param  bool $skip Skip validation 
+    * @return void
+    */
+    public function skipValidation(bool $skip = true): void
     {
         $this->skipValidation = $skip;
     }
 
+    /**
+    * Validate form based on rules
+    *
+    * @return bool true if valid, false otherwise
+    */
     public function validate(): bool
     {
         if($this->skipValidation){
@@ -178,7 +247,7 @@ class FormModel extends Model
                             }
                         }
 
-                        $row = app()->db()->select($table, $column, $where, 1, '', PDO::FETCH_COLUMN);
+                        $row = my_app()->db()->select($table, $column, $where, 1, '', PDO::FETCH_COLUMN);
                         
                         if(!$row){
                             $this->addErrorForRule($attr, $ruleName, $val);
@@ -215,7 +284,7 @@ class FormModel extends Model
                         }
                         break;
                     case static::ATTR_RULE_CSRF:
-                        if(!app()->session()->validateCsrfToken($val, $attr)){
+                        if(!my_app()->session()->validateCsrfToken($val, $attr)){
                             $this->addError('form', 'Keamanan formulir tidak valid.');
                         }
                         break;
@@ -236,6 +305,14 @@ class FormModel extends Model
         return !$this->hasError();
     }
 
+    /**
+    * Add error for specific attribute and rule
+    *
+    * @param  string $attribute Form attribute
+    * @param  string $rule Rule name
+    * @param  mixed  $param Rule param
+    * @return void
+    */
     protected function addErrorForRule(string $attribute, string $rule, $param = null): void
     {
         $message = $this->messages[$rule] ?? '';
@@ -248,11 +325,24 @@ class FormModel extends Model
         $this->addError($attribute, $message);
     }
 
+    /**
+    * Add Error for attribute
+    *
+    * @param  string $attribute Form attribute
+    * @param  string $message Error message
+    * @return void
+    */
     public function addError(string $attribute, string $message): void
     {
         $this->errors[$attribute][] = $message;
     }
 
+    /**
+    * Check wether form has error
+    *
+    * @param  string $attribute Form attribute, default null
+    * @return bool true if has, false otherwise
+    */
     public function hasError(?string $attribute = null): bool
     {
         if(is_null($attribute)){
@@ -262,27 +352,51 @@ class FormModel extends Model
         return !empty($this->errors[$attribute]);
     }
 
+    /**
+    * Get first error message
+    *
+    * @param  string $attribute Form attribute
+    * @return string Error message
+    */
     public function firstError(string $attribute): string
     {
         return $this->errors[$attribute][0] ?? '';
     }
 
+    /**
+    * Get error for soecific $attribute
+    *
+    * @param  string $attribute Form attribute
+    * @return array list of error
+    */
     public function getError(?string $attribute = null): array
     {
         if(is_null($attribute)){
             return $this->errors;
         }
 
-        return $this->errors[$attribute] ?? '';
+        return $this->errors[$attribute] ?? [];
     }
 
+    /**
+    * Validate form from ServerRequestInterface
+    *
+    * @param  ServerRequestInterface $request ServerRequestInterface
+    * @return bool true if valid, false otherwise
+    */
     public function validateWithRequest(ServerRequestInterface $request): bool
     {
         $postData = $request->getParsedBody();
-        
-        return $this->fill($postData)->validate();
+        $this->fill($postData);
+
+        return $this->validate();
     }
 
+    /**
+    * Create Html form builder
+    *
+    * @return Form Form Builder
+    */
     public function form() : Form
     {
         return new Form($this);

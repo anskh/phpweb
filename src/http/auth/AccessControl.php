@@ -4,17 +4,43 @@ declare(strict_types=1);
 
 namespace Anskh\PhpWeb\Http\Auth;
 
+use Anskh\PhpWeb\Http\App;
 use InvalidArgumentException;
 use Laminas\Diactoros\Response;
 use PDO;
-use Anskh\PhpWeb\Config\Config;
+use Anskh\PhpWeb\Http\Config;
 use Anskh\PhpWeb\Http\Session\Session;
 use Anskh\PhpWeb\Model\User;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
+/**
+ * Access control class
+ *
+ * @package    Anskh\PhpWeb\Http\Auth
+ * @author     Khaerul Anas <anasikova@gmail.com>
+ * @copyright  2021-2022 Anskh Labs.
+ * @version    1.0.0
+ */
 class AccessControl implements AccessControlInterface
 {
+    public const DRIVER_FILE          = 'from_file';
+    public const DRIVER_DB            = 'from_db';
+    public const FILTER_IP            = 'ip_filter';
+    public const FILTER_USER_AGENT    = 'useragent_filter';
+    public const ATTR_FILTER          = 'filter_config';
+    public const ATTR_FILTER_TYPE     = 'filter_type';
+    public const ATTR_FILTER_LIST     = 'filter_list';
+    public const ATTR_PERMISSION      = 'permission_config';
+    public const ATTR_PERMISSION_NAME = 'permission';
+    public const ATTR_ASSIGNMENT      = 'assignment_config';
+    public const ATTR_ROLE            = 'role_config';
+    public const ATTR_ROLE_NAME       = 'role';
+    public const SEPARATOR            = '|';
+
+    protected string $driver;
+    protected string $source;
+
     protected array $permissions;
     protected array $roles;
     protected array $assignments;
@@ -23,164 +49,204 @@ class AccessControl implements AccessControlInterface
     protected UserIdentityInterface $currentIdentity;
     protected ServerRequestInterface $currentRequest;
     protected string $model = User::class;
-    protected array $config;
 
-    public function __construct(array $config = [])
+    /**
+     * Constructor
+     *
+     * @param  array $source Configuration source, from DRIVER_FILE of DRIVER_DB
+     * @return void 
+     */
+    public function __construct(string $source, string $driver = self::DRIVER_FILE)
     {
-        $this->config = $config;
+        $this->source = $source;
+        $this->driver = $driver;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function filter(): bool
     {
-        if (!isset($this->config[Config::ATTR_APP_ACCESSCONTROL])) {
+        $filters = $this->getFilters();
+        if (!$filters) {
             return true;
         }
 
-        $filters = $this->getFilterConfig();
         foreach ($filters as $filter => $setting) {
             switch ($filter) {
-                case Config::ACCESSCONTROL_FILTER_IP:
+                case self::FILTER_IP:
                     if (!$this->filterIpAddress($setting)) {
                         return false;
-                    } 
+                    }
                     break;
-                case Config::ACCESSCONTROL_FILTER_USERAGENT:
+                case self::FILTER_USER_AGENT:
                     if (!$this->filterUserAgent($setting)) {
                         return false;
                     }
                     break;
                 default:
-                    throw new InvalidArgumentException('Available filter are ' . Config::ACCESSCONTROL_FILTER_IP . ' and ' . Config::ACCESSCONTROL_FILTER_USERAGENT);
+                    throw new InvalidArgumentException("$filter not supported.");
             }
         }
 
         return true;
     }
 
-    protected function getFilterConfig(): array
+    /**
+     * Get filter configuration
+     *
+     * @return array filter configuration
+     */
+    protected function getFilters(): array
     {
-        $driver = $this->config[Config::ATTR_ACCESSCONTROL_DRIVER];
-        if($driver === Config::ACCESSCONTROL_DRIVER_FILE){
-            return my_app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_FILTER);
-        }elseif($driver === Config::ACCESSCONTROL_DRIVER_DB){
-            $connection = $this->config[Config::ACCESSCONTROL_DRIVER_DB];
-            $results = my_app()->db($connection)->select(Config::ATTR_ACCESSCONTROL_FILTER);
-            if($results){
+        $filterAttribute = self::ATTR_FILTER;
+        if ($this->driver === self::DRIVER_FILE) {
+            return my_config()->get("{$this->source}.{$filterAttribute}");
+        } elseif ($this->driver === self::DRIVER_DB) {
+            $results = my_app()->db($this->source)->select($filterAttribute);
+            if ($results) {
                 $filters = [];
-                foreach($results as $result){
-                    if(empty($result[Config::ATTR_ACCESSCONTROL_FILTER_LIST])){
+                foreach ($results as $result) {
+                    if (empty($result[self::ATTR_FILTER_LIST])) {
                         $list = [];
-                    }else{
-                        $list = explode(Config::ACCESSCONTROL_SEPARATOR, $result[Config::ATTR_ACCESSCONTROL_FILTER_LIST]);
+                    } else {
+                        $list = explode(self::SEPARATOR, $result[self::ATTR_FILTER_LIST]);
                     }
-                    $filters[$result[Config::ATTR_ACCESSCONTROL_FILTER_TYPE]] = $list;
+                    $filters[$result[self::ATTR_FILTER_TYPE]] = $list;
                 }
                 return $filters;
             }
         }
-        
+
         return [];
     }
 
-    protected function getPermissionConfig(): array
+    /**
+     * Get permission configuration
+     *
+     * @return array permission configuration
+     */
+    protected function getPermissions(): array
     {
-        $driver = $this->config[Config::ATTR_ACCESSCONTROL_DRIVER];
-        if($driver === Config::ACCESSCONTROL_DRIVER_FILE){
-            return my_app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_PERMISSION);
-        }elseif($driver === Config::ACCESSCONTROL_DRIVER_DB){
-            $connection = $this->config[Config::ACCESSCONTROL_DRIVER_DB];
-            $results = my_app()->db($connection)->select(Config::ATTR_ACCESSCONTROL_PERMISSION, Config::ATTR_ACCESSCONTROL_PERMISSION_NAME,'',0,'',PDO::FETCH_COLUMN);
+        $permissionAttribute = self::ATTR_PERMISSION;
+        if ($this->driver === self::DRIVER_FILE) {
+            return my_config()->get("{$this->source}.{$permissionAttribute}");
+        } elseif ($this->driver === self::DRIVER_DB) {
+            $results = my_app()->db($this->source)->select(self::ATTR_PERMISSION, self::ATTR_PERMISSION_NAME, '', 0, '', PDO::FETCH_COLUMN);
+
             return $results;
         }
-        
+
         return [];
     }
 
-    protected function getAssignmentConfig(): array
+    /**
+     * Get assignment configuration
+     *
+     * @return array assignment configuration
+     */
+    protected function getAssignments(): array
     {
-        $driver = $this->config[Config::ATTR_ACCESSCONTROL_DRIVER];
-        if($driver === Config::ACCESSCONTROL_DRIVER_FILE){
-            return my_app()->config(Config::ATTR_ACCESSCONTROL_CONFIG . '.' . Config::ATTR_ACCESSCONTROL_ASSIGNMENT);
-        }elseif($driver === Config::ACCESSCONTROL_DRIVER_DB){
-            $connection = $this->config[Config::ACCESSCONTROL_DRIVER_DB];
-            $results = my_app()->db($connection)->select(Config::ATTR_ACCESSCONTROL_ASSIGNMENT);
-            if($results){
+        $assignmentAttribute = self::ATTR_ASSIGNMENT;
+        if ($this->driver === self::DRIVER_FILE) {
+            return my_config()->get("{$this->source}.{$assignmentAttribute}");
+        } elseif ($this->driver === self::DRIVER_DB) {
+            $results = my_app()->db($this->source)->select(self::ATTR_ASSIGNMENT);
+            if ($results) {
                 $assignments = [];
-                foreach($results as $result){
-                    $assignments[$result[Config::ATTR_ACCESSCONTROL_ROLE]] = explode(Config::ACCESSCONTROL_SEPARATOR, $result[Config::ATTR_ACCESSCONTROL_PERMISSION]);
+                foreach ($results as $result) {
+                    $assignments[$result[self::ATTR_ROLE_NAME]] = explode(self::SEPARATOR, $result[self::ATTR_PERMISSION_NAME]);
                 }
                 return $assignments;
             }
-            return $results;
         }
-        
+
         return [];
     }
 
-    protected function filterIpAddress(array $setting): bool
+    protected function filterIpAddress(array $blockedIps): bool
     {
-        if (empty($setting)) {
+        if (!$blockedIps) {
             return true;
         }
 
         $ip = my_client_ip();
-        if (empty($ip)) {
+        if (!$ip) {
             return true;
         }
 
-        return !in_array($ip, $setting);
+        foreach ($blockedIps as $blockedIp) {
+            if ($this->stringEquals($ip, $blockedIp)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    protected function filterUserAgent(array $setting): bool
+    protected function filterUserAgent(array $blockedUserAgents): bool
     {
-        if (empty($setting)) {
+        if (!$blockedUserAgents) {
             return true;
         }
 
-        $user_agent =  my_user_agent();
-        if (empty($user_agent)) {
+        $useragent =  my_user_agent();
+        if (!$useragent) {
             return true;
         }
 
-        return !in_array($user_agent, $setting);
+        foreach ($blockedUserAgents as $blockedUserAgent) {
+            if($this->stringEquals($useragent, $blockedUserAgent)){
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    public function isAuthenticationRequired(string $permission): bool
+    /**
+     * @inheritdoc
+     */
+    public function isAuthenticationRequired(string $route): bool
     {
-        if(!$permission){
+        if (!$route) {
             return false;
         }
 
-        $permissions = $this->getPermissionConfig();
+        $permissions = $this->getPermissions();
 
         if (!$permissions) {
             return false;
         }
 
-        return in_array($permission, $permissions);
+        return in_array($route, $permissions);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function authenticate(): UserIdentity
     {
         $session = my_app()->session();
-
-        if ($session->has(Session::ATTR_SESSION_ID) && $session->has(Session::ATTR_SESSION_HASH)) {
+        if ($session->has(Session::ATTR_USER_ID) && $session->has(Session::ATTR_USER_HASH)) {
             $userAgent =  my_user_agent();
-            $modelClass = $this->config[Config::ATTR_ACCESSCONTROL_USERMODEL];
-            if(!$modelClass){
+            $modelClass = my_app()->getAttribute(App::ATTR_USER_MODEL);
+
+            if (!$modelClass) {
                 $modelClass = User::class;
             }
-            $sid = $session->get(Session::ATTR_SESSION_ID);
+
+            $sid = $session->get(Session::ATTR_USER_ID);
             $user = $modelClass::getRow($sid);
 
-            if($user){
-                if($session->validateUserSessionHash($user[User::ATTR_PASSWORD], $user[User::ATTR_TOKEN], $userAgent))
-                {
-                    $roles = explode(Config::ACCESSCONTROL_SEPARATOR, $user[User::ATTR_ROLES]);
+            if ($user) {
+                if ($session->validateUserSessionHash($user[User::ATTR_PASSWORD], $user[User::ATTR_TOKEN], $userAgent)) {
+                    $roles = explode(self::SEPARATOR, $user[User::ATTR_ROLES]);
+
                     return new UserIdentity($sid, $user[User::ATTR_NAME], $roles);
-                }else{
-                    $session->unset(Session::ATTR_SESSION_ID);
-                    $session->unset(Session::ATTR_SESSION_HASH);
+                } else {
+                    $session->unset(Session::ATTR_USER_ID);
+                    $session->unset(Session::ATTR_USER_HASH);
                 }
             }
         }
@@ -188,20 +254,24 @@ class AccessControl implements AccessControlInterface
         return new UserIdentity();
     }
 
-    public function authorize(array $roles, string $permission): bool
+    /**
+     * @inheritdoc
+     */
+    public function authorize(UserIdentityInterface $user, string $route): bool
     {
-        if (!$permission) {
+        if (!$route) {
             return false;
         }
 
-        if(!$roles){
+        $roles = $user->getRoles();
+        if (!$roles) {
             return false;
         }
 
-        $assignments = $this->getAssignmentConfig();
+        $assignments = $this->getAssignments();
         foreach ($roles as $role) {
-            $permissions = $assignments[$role] ?? [];
-            if (in_array($permission, $permissions, true)) {
+            $routes = $assignments[$role] ?? [];
+            if (in_array($route, $routes, true)) {
                 return true;
             }
         }
@@ -209,25 +279,57 @@ class AccessControl implements AccessControlInterface
         return false;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function unauthorized(int $status = 401): ResponseInterface
     {
-        $unauthorized = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_UNAUTHORIZED);
-        if (is_null($unauthorized) || !is_callable($unauthorized)) {
+        $unauthorized = my_app()->getAttribute(App::ATTR_UNAUTHORIZED);
+        if (empty($unauthorized) || !is_callable($unauthorized)) {
             $response = new Response();
+
             return $response->withStatus($status);
         }
 
         return $unauthorized();
     }
 
+    /**
+     * @inheritdoc
+     */
     public function forbidden(int $status = 403): ResponseInterface
     {
-        $forbidden = my_app()->config(Config::ATTR_EXCEPTION_CONFIG . '.' . Config::ATTR_EXCEPTION_FORBIDDEN);
-        if (is_null($forbidden) || !is_callable($forbidden)) {
+        $forbidden = my_app()->getAttribute(App::ATTR_FORBIDDEN);
+        if (empty($forbidden) || !is_callable($forbidden)) {
             $response = new Response();
+
             return $response->withStatus($status);
         }
 
         return $forbidden();
+    }
+
+    /**
+    * Check string is equals, based on '*' start or end in $needle
+    *
+    * @param  string $haystack string to search in
+    * @param  string $needle   string to search, support start or end with '*' 
+    * @return bool true if equals, otherwise false
+    */
+    protected function stringEquals(string $haystack, string $needle): bool
+    {
+        $start = substr($needle, 0, 1);
+        $end = substr($needle, strlen($needle) - 1);
+        if ($start === '*') {
+            if ($end === '*') {
+                return strpos($haystack, trim($needle, '*'));
+            } else {
+                return my_str_ends_with($haystack, ltrim($needle, '*'));
+            }
+        } elseif ($end === '*') {
+            return my_str_starts_with($haystack, rtrim($needle, '*'));
+        } else {
+            return $haystack === $needle;
+        }
     }
 }

@@ -29,6 +29,7 @@
     "minimum-stability": "stable",
     "scripts": {
         "post-update-cmd": ["composer dump-autoload"],
-        "db:migrate": ["php -f example/migrations.php"]
+        "db:migrate": ["php -f example/migrations.php"],
+        "db:seed": ["php -f example/migrations.php seed"]
     }
 }
