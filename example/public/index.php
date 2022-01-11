@@ -16,7 +16,6 @@ use Laminas\Diactoros\{
 };
 use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
 use Anskh\PhpWeb\Http\Kernel;
-use Anskh\PhpWeb\Http\Router;
 use WoohooLabs\Harmony\Middleware\{
     DispatcherMiddleware,
     FastRouteMiddleware,
