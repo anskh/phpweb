@@ -165,12 +165,13 @@ if (!function_exists('my_current_route')) {
     {
         static $current_route;
         if($current_route){
-            return $current_route; 
+            return $current_route;
         }
 
         $path = my_app()->request()->getUri()->getPath();
+        $current_route = my_app()->router()->getRouteName($path);
 
-        return my_app()->router()->getRouteName($path);
+        return $current_route;
     }
 }
 

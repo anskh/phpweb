@@ -58,7 +58,7 @@ class DbModel extends Model
     /**
     * get primary key attribute
     *
-    * @return void primary key attribute
+    * @return string primary key attribute
     */
     public function getPrimaryKey(): string
     {
@@ -206,7 +206,7 @@ class DbModel extends Model
     * Get record based on $id
     *
     * @param  string param description
-    * @return void description
+    * @return array record array
     */
     public static function getRow($id, string $column = '*'): array
     {       

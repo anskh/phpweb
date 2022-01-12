@@ -12,15 +12,16 @@ use function FastRoute\simpleDispatcher;
 /**
  * Router class
  *
- * @package    Anskh\PhpWeb\Http\Router
+ * @package    Anskh\PhpWeb\Http
  * @author     Khaerul Anas <anasikova@gmail.com>
  * @copyright  2021-2022 Anskh Labs.
  * @version    1.0.0
  */
 class Router implements RouterInterface
 {
-    protected array $routes;
-    protected array $routePaths;
+    protected array $routes = [];
+    protected array $routePaths = [];
+    protected array $routeParams = [];
     protected Dispatcher $dispatcher;
 
     /**
@@ -31,19 +32,22 @@ class Router implements RouterInterface
      */
     public function __construct(array $routes)
     {
-        $this->routes = [];
-        $this->routePaths = [];
         $basePath = my_app()->getAttribute(App::ATTR_BASEPATH);
         foreach ($routes as $name => $route) {
             $routePath = $route[1];
-            if (($pos = strpos('[', $routePath, 1)) !== false) {
+            if ($pos = strpos($routePath, '[', 1)) {
                 $routePath = substr($routePath, 0, $pos);
             }
-            if (($pos = strpos('{', $routePath, 1)) !== false) {
+            if ($pos = strpos($routePath, '{', 1)) {
                 $routePath = substr($routePath, 0, $pos);
             }
             $this->routes[$name] = [$route[0], $basePath . $route[1], $route[2]];
             $this->routePaths[$name] = $basePath . $routePath; 
+            $param = '';
+            if($route[1] !== $routePath){
+                $param = str_replace(['[',']',':\d',':\w','+'],['','','','',''], substr($route[1], strlen($routePath)));
+            }
+            $this->routeParams[$name] = $param;
         }
     }
 
@@ -88,8 +92,14 @@ class Router implements RouterInterface
     public function getRouteName(string $path): string
     {
         foreach($this->routePaths as $name => $routePath){
-            if(substr($path, 0, strlen($routePath)) === $routePath){
-                return $name;
+            if($this->routeParams[$name]){
+                if(substr($path, 0, strlen($routePath)) === $routePath){
+                    return $name;
+                }
+            }else{
+                if($path === $routePath){
+                    return $name;
+                }
             }
         }
 
@@ -101,15 +111,17 @@ class Router implements RouterInterface
      */
     public function routeUrl(string $name, array $params = []): string
     {
-        $url = $this->routePaths[$name];
-        if(!$params && $this->routes[$name])
-        if ($params) {
-            $url = str_replace([':\d', ':\w', '+'], ['', '', ''], $url);
+        $routePath = $this->routePaths[$name];
+        $routeParam = $this->routeParams[$name];
+        if ($params && $routeParam) { 
             foreach ($params as $key => $value) {
-                $url = str_replace("{{$key}}", $value, $url);
+                $routeParam = str_replace('{'.$key.'}', $value, $routeParam);
+            }
+            if($pos = strpos($routeParam,'{')){
+                $routeParam = substr($routeParam, 0, $pos);
             }
         }
 
-        return $url;
+        return $routePath . $routeParam;
     }
 }

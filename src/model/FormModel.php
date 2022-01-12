@@ -237,7 +237,7 @@ class FormModel extends Model
                         $except = $ruleParam[2] ?? null;
 
                         $where = [];
-                        if(is_null($except)){
+                        if(!$except){
                             $where = ["$column =" => $val];
                         }else{
                             if($val !== $except){
@@ -249,7 +249,7 @@ class FormModel extends Model
 
                         $row = my_app()->db()->select($table, $column, $where, 1, '', PDO::FETCH_COLUMN);
                         
-                        if(!$row){
+                        if($row){
                             $this->addErrorForRule($attr, $ruleName, $val);
                         }
                         break;
@@ -259,9 +259,8 @@ class FormModel extends Model
                         }
                         break;
                     case static::ATTR_RULE_IN_LIST:
-                        $params = $ruleParam[0];
-                        if(!in_array(strval($val), $params, true)){
-                            $this->addErrorForRule($attr, $ruleName, '[' . implode(',', $params) . ']');
+                        if(!in_array(strval($val), $ruleParam, true)){
+                            $this->addErrorForRule($attr, $ruleName, '[' . implode(',', $ruleParam) . ']');
                         }
                         break;
                     case static::ATTR_RULE_IN_RANGE:

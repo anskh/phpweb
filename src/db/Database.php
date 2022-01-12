@@ -196,25 +196,19 @@ class Database implements DatabaseInterface
         $table = $this->getTable($table);
 
         $nullString = '';
-        $keys = [];
+        $filterData = [];
         foreach ($data as $key => $val) {
-            if (is_null($val)) {
-                if (empty($nullString)) {
-                    $nullString = $key . '=NULL,';
-                } else {
-                    $nullString .= ',' . $key . '=NULL';
-                }
+            if (!$val) {
+                $nullString .= "$key=NULL,";
             } else {
-                $keys[] = $key;
+                $filterData[$key] = $val;
             }
         }
-
-        if ($keys) {
-            if ($nullString) {
-                $nullString .= ',';
-            }
-            $sql = "UPDATE $table SET $nullString" . implode(',', array_map(fn ($attr) => $this->q($attr) . "=?", $keys));
+        
+        if ($filterData) {
+            $sql = "UPDATE $table SET $nullString" . implode(',', array_map(fn ($attr) => $this->q($attr) . "=?", array_keys($filterData)));
         } else {
+            $nullString = rtrim($nullString, ',');
             $sql = "UPDATE $table SET $nullString";
         }
 
@@ -232,8 +226,8 @@ class Database implements DatabaseInterface
             }
         }
         $stmt = $this->getConnection()->prepare($sql . ";");
-
-        $params = is_array($where) ? array_merge(array_values($data), array_values($where)) : array_values($data);
+        
+        $params = is_array($where) ? array_merge(array_values($filterData), array_values($where)) : array_values($filterData);
         $params = array_filter($params, 'strlen');
         if ($stmt->execute($params)) {
             return $stmt->rowCount();
