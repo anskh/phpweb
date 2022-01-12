@@ -6,7 +6,6 @@ namespace Anskh\PhpWeb\Middleware;
 
 namespace Anskh\PhpWeb\Middleware;
 
-use Anskh\PhpWeb\Http\App;
 use Anskh\PhpWeb\Http\AppException;
 use Anskh\PhpWeb\Http\Environment;
 use Laminas\Diactoros\Response;
@@ -91,9 +90,11 @@ final class ExceptionHandlerMiddleware implements MiddlewareInterface
         $logEnable = my_config()->get("{$this->exceptionAttribute}.{$attributeEnableLog}");
         if($logEnable){
             $attributeLogName = AppException::ATTR_LOG_NAME;
-            $logger = new Logger($attributeLogName);
+            $logName = my_config()->get("{$this->exceptionAttribute}.{$attributeLogName}");
+            $logger = new Logger($logName);
             $attributeLogFile= AppException::ATTR_LOG_FILE;
-            $logger->pushHandler(new StreamHandler($attributeLogFile));
+            $logFile = my_config()->get("{$this->exceptionAttribute}.{$attributeLogFile}");
+            $logger->pushHandler(new StreamHandler($logFile));
             $logger->pushHandler(new FirePHPHandler());
             $logger->error($exception->getMessage());
         }
