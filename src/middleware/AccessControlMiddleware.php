@@ -60,9 +60,9 @@ final class AccessControlMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         }
         
-        // return forbidden is authentication fail
+        // return unauthorized is authentication fail
         if(!$user->isAuthenticated()){
-            return $control->forbidden();
+            return $control->unauthorized();
         }
 
         // return forbidden if not authorized

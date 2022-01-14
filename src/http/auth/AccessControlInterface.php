@@ -35,14 +35,14 @@ interface AccessControlInterface
     /**
     * Authenticate user based on session
     *
-    * @return UserIdentityInterface user identity
+    * @return \Anskh\PhpWeb\Http\Auth\UserIdentityInterface user identity
     */
     public function authenticate(): UserIdentityInterface;
 
     /**
     * Authorize $user to access $route
     *
-    * @param  UserIdentityInterface $user user identity
+    * @param  \Anskh\PhpWeb\Http\Auth\UserIdentityInterface $user user identity
     * @param  string                $route route name
     * @return bool true if user is authorized, false otherwise
     */
@@ -52,7 +52,7 @@ interface AccessControlInterface
     * Unauthorized or unauthenticated response
     *
     * @param  int $status Http status code, default 401
-    * @return ResponseInterface
+    * @return \Psr\Http\Message\ResponseInterface
     */
     public function unauthorized(int $status = 401): ResponseInterface;
 
@@ -60,7 +60,7 @@ interface AccessControlInterface
     * Forbidden or access not allowed for certain role
     *
     * @param  int $status Http status code, default 403
-    * @return ResponseInterface
+    * @return \Psr\Http\Message\ResponseInterface
     */
     public function forbidden(int $status = 403): ResponseInterface;
 }

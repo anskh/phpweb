@@ -8,8 +8,8 @@ use Anskh\PhpWeb\Http\App;
 use InvalidArgumentException;
 use Laminas\Diactoros\Response;
 use PDO;
-use Anskh\PhpWeb\Http\Config;
 use Anskh\PhpWeb\Http\Session\Session;
+use Anskh\PhpWeb\Http\Auth\AccessControlInterface;
 use Anskh\PhpWeb\Model\User;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -228,19 +228,17 @@ class AccessControl implements AccessControlInterface
     public function authenticate(): UserIdentity
     {
         $session = my_app()->session();
-        if ($session->has(Session::ATTR_USER_ID) && $session->has(Session::ATTR_USER_HASH)) {
-            $userAgent =  my_user_agent();
+        $sid = $session->get(Session::ATTR_USER_ID);
+        if ($sid) {
             $modelClass = my_app()->getAttribute(App::ATTR_USER_MODEL);
 
             if (!$modelClass) {
                 $modelClass = User::class;
             }
 
-            $sid = $session->get(Session::ATTR_USER_ID);
             $user = $modelClass::getRow($sid);
-
             if ($user) {
-                if ($session->validateUserSessionHash($user[User::ATTR_PASSWORD], $user[User::ATTR_TOKEN], $userAgent)) {
+                if ($session->validateUserSessionHash($user[User::ATTR_PASSWORD], $user[User::ATTR_TOKEN], my_user_agent())) {
                     $roles = explode(self::SEPARATOR, $user[User::ATTR_ROLES]);
 
                     return new UserIdentity($sid, $user[User::ATTR_NAME], $roles);

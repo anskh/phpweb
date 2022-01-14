@@ -10,19 +10,19 @@ use Psr\Http\Message\ResponseInterface;
 use Slim\Views\PhpRenderer;
 
 /**
-* List of core function
-*
-* @author     Khaerul Anas <anasikova@gmail.com>
-* @copyright  2021-2022 Anskh Labs.
-* @version    1.0.0
-*/
+ * List of core function
+ *
+ * @author     Khaerul Anas <anasikova@gmail.com>
+ * @copyright  2021-2022 Anskh Labs.
+ * @version    1.0.0
+ */
 
 if (!function_exists('my_app')) {
     /**
-    * Get current app
-    *
-    * @return App current app
-    */
+     * Get current app
+     *
+     * @return App current app
+     */
     function my_app(): App
     {
         return Kernel::app();
@@ -31,10 +31,10 @@ if (!function_exists('my_app')) {
 
 if (!function_exists('my_config')) {
     /**
-    * Get current config hadler
-    *
-    * @return Anskh\PhpWeb\Http\Config current config handler
-    */
+     * Get current config hadler
+     *
+     * @return Anskh\PhpWeb\Http\Config current config handler
+     */
     function my_config(): Config
     {
         return Kernel::config();
@@ -43,10 +43,10 @@ if (!function_exists('my_config')) {
 
 if (!function_exists('my_client_ip')) {
     /**
-    * Get client ip v4
-    *
-    * @return string ip v4, if fail return 'unknown'
-    */
+     * Get client ip v4
+     *
+     * @return string ip v4, if fail return 'unknown'
+     */
     function my_client_ip(): string
     {
         if ($ip = getenv('HTTP_CLIENT_IP')) :
@@ -64,13 +64,13 @@ if (!function_exists('my_client_ip')) {
         }
 
         // if local ip
-        if(!$ip){
+        if (!$ip) {
             $ip = gethostbyname(gethostname());
         }
 
-        if ($ip && filter_var($ip, FILTER_VALIDATE_IP)!== false) {
+        if ($ip && filter_var($ip, FILTER_VALIDATE_IP) !== false) {
             return $ip;
-        }  
+        }
 
         return 'unknown';
     }
@@ -78,29 +78,29 @@ if (!function_exists('my_client_ip')) {
 
 if (!function_exists('my_user_agent')) {
     /**
-    * Get client user agent
-    *
-    * @return string Client user agent, if fail return 'unknown'
-    */
+     * Get client user agent
+     *
+     * @return string Client user agent, if fail return 'unknown'
+     */
     function my_user_agent(): string
     {
         return $_SERVER['HTTP_USER_AGENT'] ?? 'uknown';
     }
 }
 
-if(!function_exists('my_class_name')){
+if (!function_exists('my_class_name')) {
     /**
-    * Get class name, without namespace
-    *
-    * @param  string|object $class full class name or object
-    * @return string class name
-    */
+     * Get class name, without namespace
+     *
+     * @param  string|object $class full class name or object
+     * @return string class name
+     */
     function my_class_name($class): string
     {
         if (is_object($class)) {
             $class = get_class($class);
         }
-        
+
         if (!is_string($class)) {
             throw new InvalidArgumentException('Argument must be string or object type.');
         }
@@ -113,12 +113,12 @@ if(!function_exists('my_class_name')){
 
 if (!function_exists('my_str_starts_with')) {
     /**
-    * Check if $haystack has start with $needle
-    *
-    * @param  string $haystack String to check
-    * @param  string $needle   String to search
-    * @return bool true if $haystack start with $needle
-    */
+     * Check if $haystack has start with $needle
+     *
+     * @param  string $haystack String to check
+     * @param  string $needle   String to search
+     * @return bool true if $haystack start with $needle
+     */
     function my_str_starts_with(string $haystack, string $needle): bool
     {
         $len = strlen($needle);
@@ -133,12 +133,12 @@ if (!function_exists('my_str_starts_with')) {
 
 if (!function_exists('my_str_ends_with')) {
     /**
-    * Check if $haystack has end with $needle
-    *
-    * @param  string $haystack String to check
-    * @param  string $needle   String to search
-    * @return bool true if $haystack end with $needle
-    */
+     * Check if $haystack has end with $needle
+     *
+     * @param  string $haystack String to check
+     * @param  string $needle   String to search
+     * @return bool true if $haystack end with $needle
+     */
     function my_str_ends_with(string $haystack, string $needle): bool
     {
         $len = strlen($needle);
@@ -157,14 +157,14 @@ if (!function_exists('my_str_ends_with')) {
 
 if (!function_exists('my_current_route')) {
     /**
-    * Get current route name
-    *
-    * @return string route name
-    */
+     * Get current route name
+     *
+     * @return string route name
+     */
     function my_current_route(): string
     {
         static $current_route;
-        if($current_route){
+        if ($current_route) {
             return $current_route;
         }
 
@@ -175,20 +175,31 @@ if (!function_exists('my_current_route')) {
     }
 }
 
-/**
- * 
- */
 if (!function_exists('my_route_to')) {
+    /**
+    * Get url from route nome
+    *
+    * @param  string $name Route name
+    * @param  array  $params Route params, default empty
+    * @return string Url of route
+    */
     function my_route_to(string $name, array $params = []): string
     {
         return my_app()->router()->routeUrl($name, $params);
     }
 }
 
-/**
- * 
- */
 if (!function_exists("my_view")) {
+    /**
+    * Get view from file with layout
+    *
+    * @param  string $view View name
+    * @param  \Psr\Http\Message\ResponseInterface $response Response
+    * @param  string $layout Layout name
+    * @param  array $data Data to pass in view, default empty
+    * @param  int $status Html status code to send, default 200
+    * @return \Psr\Http\Message\ResponseInterface Response
+    */
     function my_view(string $view, ?ResponseInterface $response = null, string $layout = '', array $data = [], int $status = 200): ResponseInterface
     {
         $response = $response ?? new Response();
@@ -205,20 +216,29 @@ if (!function_exists("my_view")) {
     }
 }
 
-/**
- * 
- */
 if (!function_exists("my_base_url")) {
-    function my_base_url(string $url): string
+    /**
+    * Get full url for $uri
+    *
+    * @param  string $uri Uri
+    * @return string full url
+    */
+    function my_base_url(?string $uri = null): string
     {
-        return my_app()->getAttribute(App::ATTR_BASEURL) . '/' . $url;
+        $base_url = my_app()->getAttribute(App::ATTR_BASEURL);
+        if ($uri) return $base_url . '/' . $uri;
+
+        return $base_url;
     }
 }
 
-/**
- * 
- */
 if (!function_exists('my_attributes_to_string')) {
+    /**
+    * Convert attribute to string
+    *
+    * @param  string|array|object $attributes Attribute
+    * @return string converted string
+    */
     function my_attributes_to_string($attributes): string
     {
         if (empty($attributes)) {
