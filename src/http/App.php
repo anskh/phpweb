@@ -179,4 +179,14 @@ class App implements AttributeInterface
 
         return new MigrationBuilder($connection, $path, $action);
     }
+
+    /**
+    * Get root directory
+    *
+    * @return string Root directory
+    */
+    public function root(): string
+    {
+        return $this->rootDir;
+    }
 }
